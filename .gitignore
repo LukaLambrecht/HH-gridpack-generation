@@ -1,0 +1,5 @@
+# ignore compiled python code
+**.pyc
+
+# ignore CMSSW and everything inside it
+**CMSSW_*
