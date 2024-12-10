@@ -2,8 +2,9 @@
 
 ### Preamble
 See instructions here:
-- [gridpack generation](https://gitlab.cern.ch/hh/hhgridpacks) (for gridpack generation)
-- [sample production](https://github.com/ekoenig4/private_production) (for sample generation from gridpack)
+- [gridpack generation](https://gitlab.cern.ch/hh/hhgridpacks) (by Fabio Monti)
+- [sample production](https://github.com/ekoenig4/private_production) (by Evan Koenig)
+
 See also Thomas' lab notes for additional instructions!
 
 So far, the procedures below have been tested on T2B, not yet on LXPLUS!
@@ -36,7 +37,7 @@ git checkout -b POWHEGggHH_cmssw106x origin/POWHEGggHH_cmssw106x
 ```
 
 ### Compile an input file
-Note: the instructions use `powheg_ggHH_kl_2p45_kt_1p00_c2_0p00.input`, but for our purposes, the SM point (`powheg_ggHH_kl_1p00_kt_1p00_c2_0p00.input`) is probably more useful.
+Note: the instructions use `powheg_ggHH_kl_2p45_kt_1p00_c2_0p00.input`, but for our purposes, the SM point (`powheg_ggHH_kl_1p00_kt_1p00_c2_0p00.input`) is probably more useful. This step might take O(10-20) minutes.
 
 ```
 cd bin/Powheg/
@@ -44,7 +45,7 @@ python ./run_pwg_condor.py -p 0 -i production/Run3/13p6TeV/Higgs/gg_HH_HEFT/powh
 ```
 
 Note: the instructions do not cover a change in the H mass.
-This can probably be done by modifying `.input` file above (it has an `hmass` parameter).
+This can probably be done by modifying the `.input` file above (it has an `hmass` parameter).
 Not sure if that is the only required change though.
 Current attempt using this change (see also notes on parallelization below); to be verified.
 
