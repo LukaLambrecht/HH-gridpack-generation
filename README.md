@@ -36,10 +36,10 @@ cd genproductions
 git checkout -b POWHEGggHH_cmssw106x origin/POWHEGggHH_cmssw106x
 ```
 
-Note: this can be done in one go by running `bash install-genproductions.sh` from inside the `HH-sample-production` main directory.
+This can be done slightly more conveniently in one go by running `bash install-genproductions.sh` from inside the `HH-sample-production` main directory.
 
 ### Compile an input file
-Note: the instructions use `powheg_ggHH_kl_2p45_kt_1p00_c2_0p00.input`, but for our purposes, the SM point (`powheg_ggHH_kl_1p00_kt_1p00_c2_0p00.input`) is probably more useful. This step might take O(10-20) minutes.
+The instructions use `powheg_ggHH_kl_2p45_kt_1p00_c2_0p00.input`, but for our purposes, the SM point (`powheg_ggHH_kl_1p00_kt_1p00_c2_0p00.input`) is probably more useful. This step might take O(10-20) minutes.
 
 ```
 cd bin/Powheg/
@@ -61,6 +61,8 @@ Notes on parallelization of this step:
 - The powheg compilation step seems to modify not only its specified working directory, but also some other files/variables. Therefore, the attempt performed so far consists of making a fresh install of `CMSSW_10_6_8` and within it `genproductions` for each gridpack. So far this seems to work, even if the compilation in the different projects are run simultaneously (in different terminal windows on T2B).
 - This duplication is only temporary; once the gridpacks are ready a few steps down, they can be moved to a single place and the duplicate project folders can be removed.
 - Not yet explicitly tried to run multiple compilations in the same project. Maybe it works miraculously. To be tried later.
+
+The compilation can be configured (e.g. modify the mass in the input file) and wrapped in a condor job. See the `compilation` directory.
 
 ### Preprocess the grid files
 Following the instructions without modifications.
