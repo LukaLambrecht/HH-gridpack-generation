@@ -36,6 +36,8 @@ cd genproductions
 git checkout -b POWHEGggHH_cmssw106x origin/POWHEGggHH_cmssw106x
 ```
 
+Note: this can be done in one go by running `bash install-genproductions.sh` from inside the `HH-sample-production` main directory.
+
 ### Compile an input file
 Note: the instructions use `powheg_ggHH_kl_2p45_kt_1p00_c2_0p00.input`, but for our purposes, the SM point (`powheg_ggHH_kl_1p00_kt_1p00_c2_0p00.input`) is probably more useful. This step might take O(10-20) minutes.
 
