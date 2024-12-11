@@ -3,6 +3,5 @@
 cmsrel CMSSW_10_6_8
 cd CMSSW_10_6_8/src/
 cmsenv
-git clone https://github.com/fabio-mon/genproductions
+git clone https://github.com/fabio-mon/genproductions --depth 1 --branch POWHEGggHH_cmssw106x
 cd genproductions
-git checkout -b POWHEGggHH_cmssw106x origin/POWHEGggHH_cmssw106x

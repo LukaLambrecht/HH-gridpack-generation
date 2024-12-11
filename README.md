@@ -36,7 +36,17 @@ cd genproductions
 git checkout -b POWHEGggHH_cmssw106x origin/POWHEGggHH_cmssw106x
 ```
 
-This can be done slightly more conveniently in one go by running `bash install-genproductions.sh` from inside the `HH-sample-production` main directory.
+The `genproductions` repo is quite big, which can lead to network-related errors during cloning.
+In order to avoid those (or just to save space), you can replace the standard `git clone` above by:
+
+```
+git clone https://github.com/fabio-mon/genproductions --depth 1 --branch POWHEGggHH_cmssw106x
+```
+
+This will download only the required branch and ignore the git history.
+When you use this kind of clone, there is also no need anymore to checkout the specific branch, since it is already set during cloning.
+
+All of these steps can be done slightly more conveniently in one go by running `bash install-genproductions.sh` from inside the `HH-sample-production` main directory.
 
 ### Compile an input file
 The instructions use `powheg_ggHH_kl_2p45_kt_1p00_c2_0p00.input`, but for our purposes, the SM point (`powheg_ggHH_kl_1p00_kt_1p00_c2_0p00.input`) is probably more useful. This step might take O(10-20) minutes.
@@ -62,7 +72,9 @@ Notes on parallelization of this step:
 - This duplication is only temporary; once the gridpacks are ready a few steps down, they can be moved to a single place and the duplicate project folders can be removed.
 - Not yet explicitly tried to run multiple compilations in the same project. Maybe it works miraculously. To be tried later.
 
-The compilation can be configured (e.g. modify the mass in the input file) and wrapped in a condor job. See the `compilation` directory.
+The compilation can be configured (e.g. modify the mass in the input file) and wrapped in a condor job.
+See the `compilation` directory.
+Run `python compilation.py -h` to see a list of command line options.
 
 ### Preprocess the grid files
 Following the instructions without modifications.
@@ -91,15 +103,17 @@ In the file `run_pwg_condor.py`, add `"tmpdir": "$TMPDIR",` after line 110.
 The problem was that `cd -` redirected to my home folder, making the jobs interfere with one another and crash.
 On T2B, `$TMPDIR` refers to the working directory on worker nodes reserved for jobs.
 
-Note: all grid preprocessing steps listed in this section can be run in one go using the script `preprocess_grid_files.sh` in the `gridpack_generation` subdirectory. It takes one cmd-line arg, namely the working directory. So in this case:
+Note: all grid preprocessing steps listed in this section can be run in one go using the script `preprocess_grid_files.sh` in the `tools` subdirectory. It takes one cmd-line arg, namely the working directory. So in this case:
 
 ```
-cd gridpack_generation
+cd tools
 bash preprocess_grid_files.sh ../CMSSW_10_6_8/src/genproductions/bin/Powheg/workdir_ggHH_kl_1p00_kt_1p00_c2_0p00
 ```
 
 ### Run the calculation and make the gridpack
-Follow the instructions without modifications, but try to automate a little bit more. See `gridpack_generation` subdirectory.
+Follow the instructions without modifications, but try to automate a little bit more.
+See `gridpack_generation` subdirectory.
+Still very experimental, README to be updated when it works better.
 
 ### Check the gridpack
 Follow the instructions with small modifications:
