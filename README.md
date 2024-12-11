@@ -48,6 +48,11 @@ When you use this kind of clone, there is also no need anymore to checkout the s
 
 All of these steps can be done slightly more conveniently in one go by running `bash install-genproductions.sh` from inside the `HH-sample-production` main directory.
 
+**Specific for lxplus:** the installation as detailed above does not work on lxplus,
+since `CMSSW_10_6_X` is not compatible with the default lxplus architecture.
+Therefore, just before installing `CMSSW`, do `cmssw-cc7` to switch to a suitable container.
+Then follow exactly the same steps as above.
+
 ### Compile an input file
 The instructions use `powheg_ggHH_kl_2p45_kt_1p00_c2_0p00.input`, but for our purposes, the SM point (`powheg_ggHH_kl_1p00_kt_1p00_c2_0p00.input`) is probably more useful. This step might take O(10-20) minutes.
 
