@@ -15,7 +15,7 @@ To do: run on lxplus and update the instructions as needed.
 Git clone this repository:
 
 ```
-git clone https://github.com/LukaLambrecht/HH-sample-production
+git clone https://github.com/LukaLambrecht/HH-sample-production.git
 ```
 
 ### Setting up the gridpack generation software
