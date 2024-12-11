@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Preprocess grid files after compilation but before running the calculation
 
 

@@ -5,13 +5,15 @@
 # need to run them in the terminal and check for finishing of jobs
 # before running the next command.
 
+# Note: the strategy is to use a python script that runs continuously in the background.
+# The problem is that it might get killed after some time on a shared environment (like lxplus or T2B).
+# See an alternative approach in run_powheg_commands_crontab.py!
+
 
 import os
 import sys
 import time
 import argparse
-sys.path.append(os.path.abspath('../jobtools'))
-import condortools as ct
 
 
 def get_condor_q():
@@ -65,7 +67,7 @@ def find_running_jobs(jobid):
     # find running jobs for a specific job id
 
     lines = get_condor_q()
-    lines = [line for line in lines if line.split(' ')[2]==jobid]
+    lines = [line for line in lines if line.split(' ')[2]==str(jobid)]
     if len(lines) == 0: return 0
     if len(lines) > 1:
         msg = 'Ambiguity in job id, found lines {} for jobid {}'.format(lines, jobid)
@@ -81,7 +83,7 @@ if __name__=='__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-i', '--inputfile', required=True, type=os.path.abspath,
       help='Path to file with Powheg commands')
-    parser.add_argument('-l', '--logfile', default='log_run_powheg_commands.txt',
+    parser.add_argument('-l', '--logfile', default='log_run_powheg_commands_nohup.txt',
       help='Path to log file for writing output to')
     parser.add_argument('-r', '--run', default=False, action='store_true',
       help='Do not use, only for internal usage')
@@ -99,7 +101,7 @@ if __name__=='__main__':
 
     # make the command to run in the background
     if not args.run:
-        cmd = 'python run_powheg_commands.py -i {} -r'.format(args.inputfile)
+        cmd = 'python run_powheg_commands_nohup.py -i {} -r'.format(args.inputfile)
         cmd = 'nohup {} &> {} &'.format(cmd, args.logfile)
         os.system(cmd)
         print('Process running in the background using nohup.')
