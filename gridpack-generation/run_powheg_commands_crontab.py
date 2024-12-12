@@ -29,6 +29,8 @@ if __name__=='__main__':
       help='Path to file with Powheg commands')
     parser.add_argument('-l', '--logfile', default='log_run_powheg_commands_crontab.txt',
       help='Path to log file for writing output to')
+    parser.add_argument('--el7', default=False, action='store_true',
+      help='Run in el7 container')
     args = parser.parse_args()
     print('Running with following configuration:')
     for arg in vars(args): print('- {}: {}'.format(arg, getattr(args,arg)))
@@ -58,11 +60,12 @@ if __name__=='__main__':
         print('Creating a new log file...')
         with open(args.logfile, 'w') as f:
             inittag = tag.format(0, 0)
-            f.write(inittag)
+            f.write(inittag+'\n')
         print('Created log file {}'.format(args.logfile))
 
         # print some information
         cmd = 'python run_powheg_commands_crontab.py -i {} -l {}'.format(args.inputfile, args.logfile)
+        if args.el7: cmd += ' --el7'
         cmd += ' >> {} 2>&1'.format(args.logfile)
         thisdir = os.path.dirname(os.path.abspath(__file__))
         fullcmd = 'cd {}; {}'.format(thisdir, cmd)
@@ -72,7 +75,9 @@ if __name__=='__main__':
         info += cmd
         info += '\n\n'
         info += 'Alternatively, add the following to your crontab file:\n'
-        info += '0-59/10 * * * * {}'.format(fullcmd)
+        info += '0-59/10 * * * * {}\n'.format(fullcmd)
+        info += 'or in the case of lxplus acrontab:\n'
+        info += '0-59/10 * * * * lxplus.cern.ch {}\n'.format(fullcmd)
         print(info)
 
     # case: the log file already exists
@@ -113,6 +118,18 @@ if __name__=='__main__':
 
         # select the next command to run
         cmd = cmds[step] # note: not step+1!
+
+        # make el7 wrapping if requested
+        if args.el7:
+            container_script = 'container_script.sh'
+            thisdir = os.path.abspath(os.path.dirname(__file__))
+            run_in_container_script = os.path.abspath(os.path.join(thisdir, '../tools/run_in_el7_container.sh'))
+            preamble = '#!/bin/bash\nsource /cvmfs/cms.cern.ch/cmsset_default.sh'
+            el7cmd = 'printf "{}\n{}" >> {}'.format(preamble, cmd, container_script)
+            el7cmd += ' ; chmod +x {}'.format(container_script)
+            el7cmd += ' ; bash {} ./{}'.format(run_in_container_script, container_script)
+            el7cmd += ' ; rm {}'.format(container_script)
+            cmd = el7cmd
         
         # run command
         # note: every os.system generates a new subshell,
@@ -123,6 +140,9 @@ if __name__=='__main__':
         print('Now running the following command:')
         print(cmd)
         os.system(cmd)
+
+        sys.exit()
+
         sys.stdout.flush()
         sys.stderr.flush()
         # wait for the condor queue to update correctly

@@ -81,14 +81,15 @@ if __name__=='__main__':
         container_script = 'container_script.sh'
         thisdir = os.path.abspath(os.path.dirname(__file__))
         run_in_container_script = os.path.abspath(os.path.join(thisdir, '../tools/run_in_el7_container.sh'))
-        cmd = 'printf "#!/bin/bash\n{}" >> {}'.format(fullcmd, container_script)
-        cmd += ' ; chmod +x {}'.format(container_script)
-        cmd += ' ; bash {} ./{}'.format(run_in_container_script, container_script)
-        #cmd += ' ; rm {}'.format(container_script)
-        fullcmd = cmd
+        preamble = '#!/bin/bash\nsource /cvmfs/cms.cern.ch/cmsset_default.sh'
+        el7cmd = 'printf "{}\n{}" >> {}'.format(preamble, cmd, container_script)
+        el7cmd += ' ; chmod +x {}'.format(container_script)
+        el7cmd += ' ; bash {} ./{}'.format(run_in_container_script, container_script)
+        el7cmd += ' ; rm {}'.format(container_script)
+        fullcmd = el7cmd
 
     # submit job
-    if args.runmode=='condor': ct.submitCommandAsCondorJob('cjob_compilation', fullcmd)
+    if args.runmode=='condor': ct.submitCommandAsCondorJob('cjob_compilation', fullcmd, jobflavour='workday')
 
     # for testing: run locally
     if args.runmode=='local': os.system(fullcmd)
