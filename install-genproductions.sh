@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Install the genproductions repository inside a suitable CMSSW release
+
 cmsrel CMSSW_10_6_8
 cd CMSSW_10_6_8/src/
 cmsenv
