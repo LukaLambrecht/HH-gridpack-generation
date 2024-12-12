@@ -84,11 +84,19 @@ The decay to bb is probably specified in the Pythia configuration later on.
 
 Notes on parallelization of this step:
 - For creating gridpacks at many mass values, some parallelization is probably needed.
-- The powheg compilation step seems to modify not only its specified working directory, but also some other files/variables. However, so far it seems that multiple compilations (e.g. multiple mass values) can run simultaneously within the same project, at least when run in job mode (see below). Not sure if this also works in interactive mode. To be verified.
+- The powheg compilation step seems to modify not only its specified working directory, but also some other files/variables. To keep things safe, it is probably best to run only one compilation and calculation per project. Parallelization is possible by installing multiple versions of this repository next to each other and generate one gridpack in each.
 
 The compilation can be configured (e.g. modify the mass in the input file) and wrapped in a condor job.
 See the `compilation` directory.
 Run `python compilation.py -h` to see a list of command line options.
+Example use:
+
+```
+cd compilation
+python compilation.py -i powheg_ggHH_SM.input -m 100 -w ../CMSSW_10_6_8/src/genproductions/bin/Powheg/workdir_powheg_ggHH_SM_m_100 -r local
+```
+
+**Specific for lxplus:** because of the incompatibility between the default lxplus architecture and `CMSSW_10_6_X` (see above), this step needs to be run in an `el7` container. For running the compilation in the terminal, one can start an interactive `el7` container by doing `cd tools; ./start_el7_container.sh` and then running the above commands either manually or using `python compilation.py -i <input file> -m <mass> -w <working directory> -r local`. For running it in a job, use `python compilation.py -i <input file> -m <mass> -w <working directory> -r condor --el7`
 
 ### Preprocess the grid files
 Following the instructions without modifications.

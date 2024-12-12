@@ -2,6 +2,7 @@
 
 import os
 import sys
+import six
 import argparse
 sys.path.append('../jobtools')
 import condortools as ct
@@ -18,6 +19,8 @@ if __name__=='__main__':
       help='Set a working directory for this process (MUST be inside bin/Powheg!)')
     parser.add_argument('-r', '--runmode', choices=['condor', 'local'], default='condor',
       help='Run in condor job or locally in the terminal')
+    parser.add_argument('--el7', default=False, action='store_true',
+      help='Run in an el7 container')
     args = parser.parse_args()
     print('Running with following configuration:')
     for arg in vars(args): print('- {}: {}'.format(arg, getattr(args,arg)))
@@ -30,7 +33,7 @@ if __name__=='__main__':
         msg = 'Provided working directory {} already exists.'.format(args.workdir)
         msg += ' Overwrite? (y/n)'
         print(msg)
-        go = raw_input()
+        go = six.moves.input()
         if go!='y': sys.exit()
         os.system('rm -r {}'.format(args.workdir))
     os.makedirs(args.workdir)
@@ -72,6 +75,17 @@ if __name__=='__main__':
     # make the total command sequence
     fullcmd = 'cd {}; cmsenv; {}'.format(powhegdir, pcmd)
     print('Submitting {}'.format(fullcmd))
+
+    # make el7 wrapping if requested
+    if args.el7:
+        container_script = 'container_script.sh'
+        thisdir = os.path.abspath(os.path.dirname(__file__))
+        run_in_container_script = os.path.abspath(os.path.join(thisdir, '../tools/run_in_el7_container.sh'))
+        cmd = 'printf "#!/bin/bash\n{}" >> {}'.format(fullcmd, container_script)
+        cmd += ' ; chmod +x {}'.format(container_script)
+        cmd += ' ; bash {} ./{}'.format(run_in_container_script, container_script)
+        #cmd += ' ; rm {}'.format(container_script)
+        fullcmd = cmd
 
     # submit job
     if args.runmode=='condor': ct.submitCommandAsCondorJob('cjob_compilation', fullcmd)
