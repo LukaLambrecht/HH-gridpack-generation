@@ -17,9 +17,9 @@ if __name__=='__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-w', '--workdir', required=True, type=os.path.abspath,
       help='Path to working directory')
-    parser.add_argument('-p', '--parstage', required=0, type=int,
+    parser.add_argument('-p', '--parstage', default=0, type=int,
       help='Stage of the calculation (default: all stages)')
-    parser.add_argument('-x', '--xgrid', required=0, type=int,
+    parser.add_argument('-x', '--xgrid', default=0, type=int,
       help='Iteration of the calculation (default: all iterations)')
     args = parser.parse_args()
     print('Running with following configuration:')
