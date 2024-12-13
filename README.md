@@ -51,7 +51,7 @@ All of these steps can be done slightly more conveniently in one go by running `
 **Specific for lxplus:** the installation as detailed above does not work on lxplus,
 since `CMSSW_10_6_X` is not compatible with the default lxplus architecture.
 Therefore, just before installing `CMSSW`, do `cmssw-cc7` to switch to a suitable container.
-Then follow exactly the same steps as above.
+Then follow exactly the same steps as above. When ready, you can exit the container again using the `exit` command.
 
 **Specific for T2B:** some tweaking of the working directory settings seems to be needed (after installation, before running the next steps),
 probably because of different settings HTCondor between lxplus and T2B.
