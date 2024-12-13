@@ -32,8 +32,9 @@ if __name__=='__main__':
     parser.add_argument('--el7', default=False, action='store_true',
       help='Run in el7 container')
     args = parser.parse_args()
-    print('Running with following configuration:')
-    for arg in vars(args): print('- {}: {}'.format(arg, getattr(args,arg)))
+    print('----- {} -----'.format(datetime.datetime.now()))
+    print('Running run_powheg_commands_crontab.py with following configuration:')
+    for arg in vars(args): print('  - {}: {}'.format(arg, getattr(args,arg)))
 
     # check command line arg
     if not os.path.exists(args.inputfile):
@@ -57,7 +58,7 @@ if __name__=='__main__':
     if not logfile_exists:
         
         # create the log file and write initial tag
-        print('Creating a new log file...')
+        print('Log file does not yet exist; creating a new one...')
         with open(args.logfile, 'w') as f:
             inittag = tag.format(0, 0)
             f.write(inittag+'\n')
@@ -85,7 +86,6 @@ if __name__=='__main__':
     if logfile_exists:
         
         # read the log file to find out which step is running
-        print('----- {} -----'.format(datetime.datetime.now()))
         print('Checking currently running step in log file.')
         with open(args.logfile, 'r') as f:
             lines = [l for l in f.readlines() if l.startswith(tagstart)]
@@ -132,11 +132,6 @@ if __name__=='__main__':
             cmd = el7cmd
         
         # run command
-        # note: every os.system generates a new subshell,
-        # so it is important that all necessary preparation
-        # (such as cd to the right directory, cmsenv, etc.)
-        # is included in the command
-        # (e.g. 'prep 1; prep 2; actual powheg command')
         print('Now running the following command:')
         print(cmd)
         os.system(cmd)
@@ -148,4 +143,7 @@ if __name__=='__main__':
         jobid = find_latest_jobid()
         if jobid is None: raise Exception('Something went wrong: no jobs found.')
         # add tag to the log file
-        print(tag.format(step+1, jobid))
+        # (use explicit file writing to make sure the tag is written
+        #  even if stdout redirection is omitted)
+        with open(args.logfile, 'a') as f:
+            f.write(tag.format(step+1, jobid)+'\n')

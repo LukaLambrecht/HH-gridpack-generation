@@ -116,7 +116,7 @@ if __name__=='__main__':
       help='Do not use, only for internal usage')
     args = parser.parse_args()
     print('Running with following configuration:')
-    for arg in vars(args): print('- {}: {}'.format(arg, getattr(args,arg)))
+    for arg in vars(args): print('  - {}: {}'.format(arg, getattr(args,arg)))
 
     # check command line arg
     if not os.path.exists(args.inputfile):

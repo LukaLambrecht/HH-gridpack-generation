@@ -18,7 +18,7 @@ if __name__=='__main__':
       help='Path to the gridpack to check')
     args = parser.parse_args()
     print('Running with following configuration:')
-    for arg in vars(args): print('- {}: {}'.format(arg, getattr(args,arg)))
+    for arg in vars(args): print('  - {}: {}'.format(arg, getattr(args,arg)))
 
     # check command line arg
     if not os.path.exists(args.gridpack):
