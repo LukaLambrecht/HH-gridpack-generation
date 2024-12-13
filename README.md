@@ -123,6 +123,10 @@ cd tools
 ./preprocess_grid_files.sh ../CMSSW_10_6_8/src/genproductions/bin/Powheg/workdir_ggHH_kl_1p00_kt_1p00_c2_0p00
 ```
 
+Note: in the script `creategrid.py` (inside the working directory), the H mass seems to be hard-coded at 125!
+Potentially this needs to be patched as well, to investigate further.
+This might be the cause for crashes observed when running at mass 100.
+
 ### Run the calculation and make the gridpack
 Follow the instructions without modifications, but try to automate a little bit more.
 See `gridpack_generation` subdirectory.
