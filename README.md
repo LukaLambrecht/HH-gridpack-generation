@@ -46,7 +46,7 @@ git clone https://github.com/fabio-mon/genproductions --depth 1 --branch POWHEGg
 This will download only the required branch and ignore the git history.
 When you use this kind of clone, there is also no need anymore to checkout the specific branch, since it is already set during cloning.
 
-All of these steps can be done slightly more conveniently in one go by running `./install-genproductions.sh` from inside the `HH-sample-production` main directory.
+**For convenience:** all of these steps can be done slightly more conveniently in one go by running `./install-genproductions.sh` from inside the `HH-sample-production` main directory.
 
 **Specific for lxplus:** the installation as detailed above does not work on lxplus,
 since `CMSSW_10_6_X` is not compatible with the default lxplus architecture.
@@ -65,7 +65,7 @@ cd tools
 This basically replaces `cd -` in the job template script by `cd /tmp`, where `/tmp` is a temporary working directory on the T2B nodes (also works on the interface machines).
 
 ## Compile an input file
-The instructions use `powheg_ggHH_kl_2p45_kt_1p00_c2_0p00.input`, but for our purposes, the SM point (`powheg_ggHH_kl_1p00_kt_1p00_c2_0p00.input`) is probably more useful. This step might take O(10-20) minutes.
+The instructions use `powheg_ggHH_kl_2p45_kt_1p00_c2_0p00.input`, but for our purposes, the SM point (`powheg_ggHH_kl_1p00_kt_1p00_c2_0p00.input`) is probably more useful. This step might take O(30) minutes.
 
 ```
 cd bin/Powheg/
@@ -87,7 +87,7 @@ Notes on parallelization of this step:
 - For creating gridpacks at many mass values, some parallelization is probably needed.
 - The Powheg compilation step seems to modify not only its specified working directory, but also some other files/variables. To keep things safe, it is probably best to run only one compilation and calculation per project. Parallelization is possible by installing multiple versions of this repository next to each other and generate one gridpack in each.
 
-The compilation can be more conveniently configured (e.g. modify the mass in the input file) and wrapped in a condor job.
+**For convenience:** the compilation can be more conveniently configured (e.g. modify the mass in the input file) and wrapped in a condor job.
 See the `compilation` directory. Run `python compilation.py -h` to see a list of command line options.
 Example use:
 
@@ -119,7 +119,7 @@ python3 -c "$pythoncmd"
 
 This creates a `.grid` file named `Virt_full_+1.0000E+00_+1.0000E+00_+0.0000E+00_+0.0000E+00_+0.0000E+00.grid` in the chosen working directory `workdir_powheg_ggHH_kl_1p00_kt_1p00_c2_0p00`.
 
-These grid preprocessing steps can be run in one go using the script `preprocess_grid_files.sh` in the `tools` subdirectory. It takes one cmd-line arg, namely the working directory. So in this case:
+**For convenience:** these grid preprocessing steps can be run in one go using the script `preprocess_grid_files.sh` in the `tools` subdirectory. It takes one cmd-line arg, namely the working directory. So in this case:
 
 ```
 cd tools
@@ -134,21 +134,47 @@ Potentially this needs to be patched as well, to investigate further.
 This might be the cause for crashes observed when running at mass 100.
 
 ## Run the calculation and make the gridpack
-Follow the instructions without modifications, but try to automate a little bit more.
-See `gridpack_generation` subdirectory.
-Still very experimental, README to be updated when it works better.
+Follow the instructions without modifications.
 
 Some remarks:
 - The first step (`-p 1`) is repeated several times with different loop numbers (`-x <1 to 5>`). The number of repititions seems to be free to choose. The more loops, the more refined the final grid will be.
-- To investigate whether increasing the number of jobs (`-j`) reduces their runtime, maybe in combination with the number of events (`-n`) argument. 
+- To investigate whether increasing the number of jobs (`-j`) reduces their runtime, maybe in combination with the number of events (`-n`) argument.
 
-### Check the gridpack
+**For convenience:** it is quite annoying to monitor all these iterations manually and submit the next batch of jobs when the previous one is done (especially in the case of many gridpacks).
+Therefore, an attempt to automate this procedure has been made.
+Still in development, it does not work perfectly yet.
+But the basic idea is to set up a cron job that monitors the output of `condor_q`.
+Follow these steps (on T2B, for lxplus, see some slight modifications below):
+
+```
+cd gridpack-generation
+python make_powheg_commands.py -i <path to your powheg input file from the previous steps> -w <path to your powheg working directory from the previous steps> -o <choose an output .txt file name>
+```
+
+This generates the chosen output file, that is simply a txt file with the powheg commands to run (and some auxiliary things, like `cd` and `cmsenv`).
+Now do the following:
+
+```
+python run_powheg_commands.py -i <the .txt file with powheg commands from the previous step> -l <choose a name of a log .txt file>
+```
+
+This generates a new log file and also prints some instructions on how to proceed.
+You can now just repeat the same command as above whenever you want, or add it in your crontab file.
+Running this command will check if condor jobs associated with the current step are still running, and if not submit the next step.
+
+**Specific for lxplus:** a few modifications have to be made on lxplus.
+First of all, in the current standard lxplus terminal, `python` is not defined, but `python3` is, so modify the commands above accordingly.
+The actual powheg commands have to be run from and `el7` container just as before.
+Either start an `el7` container with `./start_el7_container.sh` in `tools` when running command by command interactively,
+or add the `--el7` argument to the `run_powheg_commands.py` when running th convenience scripts.
+
+## Check the gridpack
 Follow the instructions with small modifications:
 - wrap in an HTCondor job.
 - change working directory from `/tmp/` (on lxplus) to `$TMPDIR` (on T2B).
 See `gridpack_generation` subdirectory.
 
-### Setting up the sample production software
+## Setting up the sample production software
 Clone the repository.
 
 ```
