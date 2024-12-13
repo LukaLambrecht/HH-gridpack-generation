@@ -64,7 +64,7 @@ if __name__=='__main__':
         print('Created log file {}'.format(args.logfile))
 
         # print some information
-        cmd = 'python run_powheg_commands_crontab.py -i {} -l {}'.format(args.inputfile, args.logfile)
+        cmd = 'python3 run_powheg_commands_crontab.py -i {} -l {}'.format(args.inputfile, args.logfile)
         if args.el7: cmd += ' --el7'
         cmd += ' >> {} 2>&1'.format(args.logfile)
         thisdir = os.path.dirname(os.path.abspath(__file__))
@@ -75,9 +75,9 @@ if __name__=='__main__':
         info += cmd
         info += '\n\n'
         info += 'Alternatively, add the following to your crontab file:\n'
-        info += '0-59/10 * * * * {}\n'.format(fullcmd)
+        info += '0-59/30 * * * * {}\n'.format(fullcmd)
         info += 'or in the case of lxplus acrontab:\n'
-        info += '0-59/10 * * * * lxplus.cern.ch {}\n'.format(fullcmd)
+        info += '0-59/30 * * * * lxplus.cern.ch {}\n'.format(fullcmd)
         print(info)
 
     # case: the log file already exists
