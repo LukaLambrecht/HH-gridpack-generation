@@ -11,14 +11,14 @@ So far, the procedures below have been tested on T2B, not yet on LXPLUS!
 Small modifications are potentially needed in the latter case.
 To do: run on lxplus and update the instructions as needed.
 
-### Installation of this repository
+## Installation of this repository
 Git clone this repository:
 
 ```
 git clone https://github.com/LukaLambrecht/HH-sample-production.git
 ```
 
-### Setting up the gridpack generation software
+## Setting up the gridpack generation software
 Set up a suitable CMSSW release and git clone the `genproductions` repository (fork by Fabio Monti) into it. All of this preferably inside the `HH-sample-production` folder to keep things orderly, but not necessarily.
 
 ```
@@ -64,7 +64,7 @@ cd tools
 
 This basically replaces `cd -` in the job template script by `cd /tmp`, where `/tmp` is a temporary working directory on the T2B nodes (also works on the interface machines).
 
-### Compile an input file
+## Compile an input file
 The instructions use `powheg_ggHH_kl_2p45_kt_1p00_c2_0p00.input`, but for our purposes, the SM point (`powheg_ggHH_kl_1p00_kt_1p00_c2_0p00.input`) is probably more useful. This step might take O(10-20) minutes.
 
 ```
@@ -72,10 +72,11 @@ cd bin/Powheg/
 python ./run_pwg_condor.py -p 0 -i production/Run3/13p6TeV/Higgs/gg_HH_HEFT/powheg_ggHH_kl_1p00_kt_1p00_c2_0p00.input -m ggHH -f workdir_powheg_ggHH_kl_1p00_kt_1p00_c2_0p00 --svn 4038
 ```
 
+In this command, `-p 0` specifies that the step to be run is the compilation (as opposed to e.g. `-p 1`, `-p 2` and `-p 3` which are steps in the calculation, or `-p 9` which is the final packing of the tarball). The argument `-i` specifies the input file, `-m` specifies the Powheg process, `-f` is used to choose a working directory where intermediate results will be stored. For the `--svn` argument, see [Fabio's intructions](https://gitlab.cern.ch/hh/hhgridpacks).
+
 Note: the instructions do not cover a change in the H mass.
 This can probably be done by modifying the `.input` file above (it has an `hmass` parameter).
-Not sure if that is the only required change though.
-Current attempt using this change (see also notes on parallelization below); to be verified.
+Not sure if that is the only required change though; to be verified.
 
 Note: the `.input` file above does not yet specify the decay of the H bosons.
 It has a H decay mode parameter `hdecaymode` set to `-1`, i.e. close all decay channels).
@@ -84,11 +85,10 @@ The decay to bb is probably specified in the Pythia configuration later on.
 
 Notes on parallelization of this step:
 - For creating gridpacks at many mass values, some parallelization is probably needed.
-- The powheg compilation step seems to modify not only its specified working directory, but also some other files/variables. To keep things safe, it is probably best to run only one compilation and calculation per project. Parallelization is possible by installing multiple versions of this repository next to each other and generate one gridpack in each.
+- The Powheg compilation step seems to modify not only its specified working directory, but also some other files/variables. To keep things safe, it is probably best to run only one compilation and calculation per project. Parallelization is possible by installing multiple versions of this repository next to each other and generate one gridpack in each.
 
-The compilation can be configured (e.g. modify the mass in the input file) and wrapped in a condor job.
-See the `compilation` directory.
-Run `python compilation.py -h` to see a list of command line options.
+The compilation can be more conveniently configured (e.g. modify the mass in the input file) and wrapped in a condor job.
+See the `compilation` directory. Run `python compilation.py -h` to see a list of command line options.
 Example use:
 
 ```
@@ -96,9 +96,12 @@ cd compilation
 python compilation.py -i powheg_ggHH_SM.input -m 100 -w ../CMSSW_10_6_8/src/genproductions/bin/Powheg/workdir_powheg_ggHH_SM_m_100 -r local
 ```
 
-**Specific for lxplus:** because of the incompatibility between the default lxplus architecture and `CMSSW_10_6_X` (see above), this step needs to be run in an `el7` container. Yet, contrary to the case above for `cmssw-cc7`, we cannot use the standard `cmssw-el7` script since it does not have access to HTCondor. Therefore, a customized script `start_el7_container.sh` is needed. For running the compilation in the terminal, one can start an interactive `el7` container wth HTCondor access by doing `cd tools; ./start_el7_container.sh` and then running the above commands either manually or using `python compilation.py -i <input file> -m <mass> -w <working directory> -r local`. For running it in a job, use `python compilation.py -i <input file> -m <mass> -w <working directory> -r condor --el7`
+This will use the vanilla input file `powheg_ggHH_SM.input`, modify the mass to 100 GeV, and use the specified working directory.
+Use `-r condor` to run in a condor job instead of `-r local` to run in the terminal.
 
-### Preprocess the grid files
+**Specific for lxplus:** because of the incompatibility between the default lxplus architecture and `CMSSW_10_6_X` (see above), this step needs to be run in an `el7` container. Yet, contrary to the case above for `cmssw-cc7`, we cannot use the standard `cmssw-el7` script since it does not have access to HTCondor. Therefore, a customized script `start_el7_container.sh` is needed. For running the compilation in the terminal, one can start an interactive `el7` container wth HTCondor access by doing `cd tools; ./start_el7_container.sh` and then running the above commands either manually or using `python compilation.py -i <input file> -m <mass> -w <working directory> -r local`. For running it in a job, use `python compilation.py -i <input file> -m <mass> -w <working directory> -r condor --el7`. You can exit the container with the `exit` command.
+
+## Preprocess the grid files
 Following the instructions without modifications.
 
 ```
@@ -123,14 +126,21 @@ cd tools
 ./preprocess_grid_files.sh ../CMSSW_10_6_8/src/genproductions/bin/Powheg/workdir_ggHH_kl_1p00_kt_1p00_c2_0p00
 ```
 
+**Specific for lxplus:** it is advised to run these preprocessing steps in an `el7` container just like the previous step.
+Simply use the `./start_el7_container.sh` script before running the preprocessing steps.
+
 Note: in the script `creategrid.py` (inside the working directory), the H mass seems to be hard-coded at 125!
 Potentially this needs to be patched as well, to investigate further.
 This might be the cause for crashes observed when running at mass 100.
 
-### Run the calculation and make the gridpack
+## Run the calculation and make the gridpack
 Follow the instructions without modifications, but try to automate a little bit more.
 See `gridpack_generation` subdirectory.
 Still very experimental, README to be updated when it works better.
+
+Some remarks:
+- The first step (`-p 1`) is repeated several times with different loop numbers (`-x <1 to 5>`). The number of repititions seems to be free to choose. The more loops, the more refined the final grid will be.
+- To investigate whether increasing the number of jobs (`-j`) reduces their runtime, maybe in combination with the number of events (`-n`) argument. 
 
 ### Check the gridpack
 Follow the instructions with small modifications:
