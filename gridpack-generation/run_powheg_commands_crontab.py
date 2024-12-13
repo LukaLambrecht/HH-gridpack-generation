@@ -140,9 +140,6 @@ if __name__=='__main__':
         print('Now running the following command:')
         print(cmd)
         os.system(cmd)
-
-        sys.exit()
-
         sys.stdout.flush()
         sys.stderr.flush()
         # wait for the condor queue to update correctly

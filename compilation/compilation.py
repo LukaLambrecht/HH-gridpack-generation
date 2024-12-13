@@ -82,7 +82,7 @@ if __name__=='__main__':
         thisdir = os.path.abspath(os.path.dirname(__file__))
         run_in_container_script = os.path.abspath(os.path.join(thisdir, '../tools/run_in_el7_container.sh'))
         preamble = '#!/bin/bash\nsource /cvmfs/cms.cern.ch/cmsset_default.sh'
-        el7cmd = 'printf "{}\n{}" >> {}'.format(preamble, cmd, container_script)
+        el7cmd = 'printf "{}\n{}" >> {}'.format(preamble, fullcmd, container_script)
         el7cmd += ' ; chmod +x {}'.format(container_script)
         el7cmd += ' ; bash {} ./{}'.format(run_in_container_script, container_script)
         el7cmd += ' ; rm {}'.format(container_script)

@@ -10,6 +10,7 @@ export APPTAINER_BINDPATH=/afs,/cvmfs,/cvmfs/grid.cern.ch/etc/grid-security:/etc
 
 # get the condor schedd from the current environment
 schedd=`myschedd show -j | jq .currentschedd | tr -d '"'`
+#schedd=bigbird27.cern.ch
 
 # define the container image
 image=/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-cat/cmssw-lxplus/cmssw-el7-lxplus:latest/
