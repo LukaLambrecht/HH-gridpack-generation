@@ -11,12 +11,13 @@ export APPTAINER_BINDPATH=/afs,/cvmfs,/cvmfs/grid.cern.ch/etc/grid-security:/etc
 
 # get condor schedd from current environment
 schedd=`myschedd show -j | jq .currentschedd | tr -d '"'`
+setschedd="source /app/setupCondor.sh && export _condor_SCHEDD_HOST=$schedd && export _condor_SCHEDD_NAME=$schedd && export _condor_CREDD_HOST=$schedd"
 
 # define image
 image=/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-cat/cmssw-lxplus/cmssw-el7-lxplus:latest/
 
 # make the command to run
-cmd="source /app/setupCondor.sh && export _condor_SCHEDD_HOST=$schedd && export _condor_SCHEDD_NAME=$schedd && export _condor_CREDD_HOST=$schedd && /bin/bash"
+cmd="$setschedd && /bin/bash"
 
 # run apptainer
 apptainer -s exec "$image" sh -c "$cmd"
