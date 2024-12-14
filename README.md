@@ -167,6 +167,8 @@ First of all, in the current standard lxplus terminal, `python` is not defined, 
 The actual powheg commands have to be run from and `el7` container just as before.
 Either start an `el7` container with `./start_el7_container.sh` in `tools` when running command by command interactively,
 or add the `--el7` argument to the `run_powheg_commands.py` when running th convenience scripts.
+And finally, since regular `cron` is not accessible on lxplus, use 'authenticated cron' with the `acrontab -e` command.
+The syntax is exactly the same as regular cron, except for an extra field `lxplus.cern.ch` between the time specifiers and the command(s) to run.
 
 ## Check the gridpack
 Follow the instructions with small modifications:
