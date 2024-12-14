@@ -16,11 +16,13 @@ if __name__=='__main__':
     parser.add_argument('-m', '--mass', default=125, type=int,
       help='Mass for the H boson (default: unmodified at 125 GeV)')
     parser.add_argument('-w', '--workdir', required=True, type=os.path.abspath,
-      help='Set a working directory for this process (MUST be inside bin/Powheg!)')
+      help='Set a unique working directory for this process (MUST be inside bin/Powheg!)')
     parser.add_argument('-r', '--runmode', choices=['condor', 'local'], default='condor',
       help='Run in condor job or locally in the terminal')
     parser.add_argument('--el7', default=False, action='store_true',
       help='Run in an el7 container')
+    parser.add_argument('--preparegrid', default=False, action='store_true',
+      help='Do grid preprocessing steps after the compilation')
     args = parser.parse_args()
     print('Running with following configuration:')
     for arg in vars(args): print('  - {}: {}'.format(arg, getattr(args,arg)))
@@ -67,29 +69,36 @@ if __name__=='__main__':
     print(' - input file: {}'.format(inputfile_rel))
     print(' - working directory: {}'.format(workdir_rel))
 
-    # make the compilation command
+    # retrieve the tool directory (for use later)
+    thisdir = os.path.abspath(os.path.dirname(__file__))
+    toolsdir = os.path.abspath(os.path.join(thisdir, '../tools'))
+
+    # make the commands and write to a script
+    exe = 'compilation_{}.sh'.format(os.path.basename(args.workdir))
     pcmd = 'python ./run_pwg_condor.py -p 0'
     pcmd += ' -i {} -m ggHH -f {}'.format(inputfile_rel, workdir_rel)
     pcmd += ' --svn 4038' # see main README for instructions on this
+    with open(exe, 'w') as f:
+        f.write('#!/bin/bash\n')
+        f.write('source /cvmfs/cms.cern.ch/cmsset_default.sh\n')
+        f.write('cd {}\n'.format(powhegdir))
+        f.write('cmsenv\n')
+        f.write(pcmd+'\n')
+    os.system('chmod +x {}'.format(exe))
+    cmd = './{}'.format(exe)
 
-    # make the total command sequence
-    fullcmd = 'cd {}; cmsenv; {}'.format(powhegdir, pcmd)
-    print('Submitting {}'.format(fullcmd))
+    # add grid preprocessing commands if requested
+    preprocess_script = os.path.join(toolsdir, 'preprocess_grid_files.sh')
+    with open(exe, 'a') as f:
+        f.write('bash {} {}\n'.format(preprocess_script, args.workdir))
 
     # make el7 wrapping if requested
     if args.el7:
-        container_script = 'container_script.sh'
-        thisdir = os.path.abspath(os.path.dirname(__file__))
-        run_in_container_script = os.path.abspath(os.path.join(thisdir, '../tools/run_in_el7_container.sh'))
-        preamble = '#!/bin/bash\nsource /cvmfs/cms.cern.ch/cmsset_default.sh'
-        el7cmd = 'printf "{}\n{}" >> {}'.format(preamble, fullcmd, container_script)
-        el7cmd += ' ; chmod +x {}'.format(container_script)
-        el7cmd += ' ; bash {} ./{}'.format(run_in_container_script, container_script)
-        el7cmd += ' ; rm {}'.format(container_script)
-        fullcmd = el7cmd
+        run_in_container_script = os.path.join(toolsdir, 'run_in_el7_container.sh')
+        cmd = 'bash {} {}'.format(run_in_container_script, cmd)
 
     # submit job
-    if args.runmode=='condor': ct.submitCommandAsCondorJob('cjob_compilation', fullcmd, jobflavour='workday')
+    if args.runmode=='condor': ct.submitCommandAsCondorJob('cjob_compilation', cmd, jobflavour='workday')
 
     # for testing: run locally
-    if args.runmode=='local': os.system(fullcmd)
+    if args.runmode=='local': os.system(cmd)
