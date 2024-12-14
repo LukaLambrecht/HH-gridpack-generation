@@ -27,8 +27,8 @@ if __name__=='__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-i', '--inputfile', required=True, type=os.path.abspath,
       help='Path to file with Powheg commands')
-    parser.add_argument('-l', '--logfile', default='log_run_powheg_commands_crontab.txt',
-      help='Path to log file for writing output to')
+    parser.add_argument('-n', '--name', default='run_powheg_commands',
+      help='Name tag for auto-generated script and log file')
     parser.add_argument('--el7', default=False, action='store_true',
       help='Run in el7 container')
     args = parser.parse_args()
@@ -43,15 +43,39 @@ if __name__=='__main__':
 
     # find the number of commands to run
     with open(args.inputfile, 'r') as f:
-        cmds = f.readlines()
-    ncmds = len(cmds)
+        powheg_cmds = f.readlines()
+    n_powheg_cmds = len(powheg_cmds)
 
     # define a base tag for interaction with the log file
-    tag = '###RUNNING###: STEP: {}' + '/{},'.format(ncmds) + ' JOBID: {}'
+    tag = '###RUNNING###: STEP: {}' + '/{},'.format(n_powheg_cmds) + ' JOBID: {}'
     tagstart = tag[:14]
 
-    # check if log file already exists
-    logfile_exists = os.path.exists(args.logfile)
+    # parse the log file name and check if log file already exists
+    # note: there is a short log file for internal bookkeeping,
+    #       and a full log file to just dump all the output
+    #       (for potential debugging)
+    logfile = os.path.abspath('log_{}.txt'.format(args.name))
+    fulllogfile = os.path.abspath('log_{}_full.txt'.format(args.name))
+    exe = os.path.abspath('exe_{}.sh'.format(args.name))
+    logfile_exists = os.path.exists(logfile)
+
+    # some safety checks
+    if not logfile_exists:
+        existingfile = None
+        if os.path.exists(fulllogfile): existingfile = fulllogfile
+        if os.path.exists(exe): existingfile = exe
+        if existingfile is not None:
+            msg = 'ERROR: a file with name {} already exists'.format(fulllogfile)
+            msg += ' and will interfere with the current run.'
+            msg += ' Either remove/rename the file'
+            msg += ' or choose a different name (-n) for the current run.'
+            raise Exception(msg)
+    if logfile_exists:
+        missingfile = None
+        if not os.path.exists(exe): missingfile = exe
+        if missingfile is not None:
+            msg = 'ERROR: file {} not found.'.format(missingfile)
+            raise Exception(msg)
 
     # case: log file does not exist yet
     # (i.e. manually initiated first call)
@@ -59,21 +83,37 @@ if __name__=='__main__':
         
         # create the log file and write initial tag
         print('Log file does not yet exist; creating a new one...')
-        with open(args.logfile, 'w') as f:
+        with open(logfile, 'w') as f:
             inittag = tag.format(0, 0)
             f.write(inittag+'\n')
-        print('Created log file {}'.format(args.logfile))
+        print('Created log file {}'.format(logfile))
+
+        # retrieve the tool directory (for use later)
+        thisdir = os.path.abspath(os.path.dirname(__file__))
+        toolsdir = os.path.abspath(os.path.join(thisdir, '../tools'))
+
+        # make executable script for next steps
+        cmd = 'python3 run_powheg_commands_crontab.py'
+        cmd += ' -i {} -n {}'.format(args.inputfile, args.name)
+        with open(exe, 'w') as f:
+            f.write('#!/bin/bash\n')
+            f.write('source /cvmfs/cms.cern.ch/cmsset_default.sh\n')
+            f.write('cd {}\n'.format(thisdir))
+            f.write(cmd+'\n')
+        os.system('chmod +x {}'.format(exe))
+        cmd = 'bash {}'.format(exe)
+
+        # make el7 wrapping if requested
+        if args.el7:
+            run_in_container_script = os.path.join(toolsdir, 'run_in_el7_container.sh')
+            cmd = 'bash {} {}'.format(run_in_container_script, exe)
 
         # print some information
-        cmd = 'python3 run_powheg_commands_crontab.py -i {} -l {}'.format(args.inputfile, args.logfile)
-        if args.el7: cmd += ' --el7'
-        cmd += ' >> {} 2>&1'.format(args.logfile)
-        thisdir = os.path.dirname(os.path.abspath(__file__))
-        fullcmd = 'cd {}; {}'.format(thisdir, cmd)
+        fullcmd  = cmd + ' >> {} 2>&1'.format(fulllogfile)
         info = '\n'
         info += 'Run the following command at regular intervals'
         info += ' to check the status and submit the next step if appropriate:\n'
-        info += cmd
+        info += fullcmd
         info += '\n\n'
         info += 'Alternatively, add the following to your crontab file:\n'
         info += '0-59/30 * * * * {}\n'.format(fullcmd)
@@ -84,10 +124,13 @@ if __name__=='__main__':
     # case: the log file already exists
     # (i.e. crontab initiated calls)
     if logfile_exists:
+
+        # initialize message to write to log file
+        logmsg = '---- {} ----\n'.format(datetime.datetime.now())
         
         # read the log file to find out which step is running
         print('Checking currently running step in log file.')
-        with open(args.logfile, 'r') as f:
+        with open(logfile, 'r') as f:
             lines = [l for l in f.readlines() if l.startswith(tagstart)]
         if len(lines)==0:
             step = 0
@@ -97,53 +140,58 @@ if __name__=='__main__':
             lineparts = line.split(' ')
             step = int(lineparts[2].split('/')[0])
             jobid = int(lineparts[4])
-        print('Found step {} with jobid {}'.format(step, jobid))
+        msg = 'Found step {} with jobid {}'.format(step, jobid)
+        print(msg)
+        logmsg += msg+'\n'
 
         # check if jobs are still running/pending
         if jobid==0: njobs = 0
         else: njobs = find_running_jobs(jobid)
         msg = 'Found {} running/pending jobs for jobid {}'.format(njobs, jobid)
+        doexit = False
         if njobs!=0:
             msg += ' -> do nothing, exiting.'
             print(msg)
-            sys.exit()
+            logmsg += msg+'\n'
+            doexit = True
         else:
-            if step == ncmds:
+            if step == n_powheg_cmds:
                 msg += ' -> all steps have been completed, exiting.'
                 print(msg)
-                sys.exit()
+                logmsg += msg+'\n'
+                doexit = True
             else:
                 msg += ' -> submit next step!'
                 print(msg)
+                logmsg += msg+'\n'
+        if doexit:
+            with open(logfile, 'a') as f: f.write(logmsg)
+            sys.exit()
 
         # select the next command to run
-        cmd = cmds[step] # note: not step+1!
+        cmd = powheg_cmds[step] # note: not step+1!
 
-        # make el7 wrapping if requested
-        if args.el7:
-            container_script = 'container_script.sh'
-            thisdir = os.path.abspath(os.path.dirname(__file__))
-            run_in_container_script = os.path.abspath(os.path.join(thisdir, '../tools/run_in_el7_container.sh'))
-            preamble = '#!/bin/bash\nsource /cvmfs/cms.cern.ch/cmsset_default.sh'
-            el7cmd = 'printf "{}\n{}" >> {}'.format(preamble, cmd, container_script)
-            el7cmd += ' ; chmod +x {}'.format(container_script)
-            el7cmd += ' ; bash {} ./{}'.format(run_in_container_script, container_script)
-            el7cmd += ' ; rm {}'.format(container_script)
-            cmd = el7cmd
-        
+        # retrieve latest job id
+        # (to check new job id against after submission)
+        oldjobid = find_latest_jobid()
+
         # run command
         print('Now running the following command:')
         print(cmd)
-        os.system(cmd)
+        #os.system(cmd)
         sys.stdout.flush()
         sys.stderr.flush()
+        
         # wait for the condor queue to update correctly
         time.sleep(1)
-        # find the job id of the jobs just submitted
+        
+        # find and check the job id of the jobs just submitted
         jobid = find_latest_jobid()
-        if jobid is None: raise Exception('Something went wrong: no jobs found.')
-        # add tag to the log file
-        # (use explicit file writing to make sure the tag is written
-        #  even if stdout redirection is omitted)
-        with open(args.logfile, 'a') as f:
-            f.write(tag.format(step+1, jobid)+'\n')
+        if jobid is None: raise Exception('ERROR: no jobs found.')
+        if oldjobid is not None and jobid==oldjobid:
+            msg = 'ERROR: job id equals an already existing job id.'
+            raise Exception(msg)
+        
+        # write info to log file
+        logmsg += tag.format(step+1, jobid)+'\n'
+        with open(logfile, 'a') as f: f.write(logmsg)

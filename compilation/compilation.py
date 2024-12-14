@@ -74,7 +74,7 @@ if __name__=='__main__':
     toolsdir = os.path.abspath(os.path.join(thisdir, '../tools'))
 
     # make the commands and write to a script
-    exe = 'compilation_{}.sh'.format(os.path.basename(args.workdir))
+    exe = 'exe_{}.sh'.format(os.path.basename(args.workdir))
     pcmd = 'python ./run_pwg_condor.py -p 0'
     pcmd += ' -i {} -m ggHH -f {}'.format(inputfile_rel, workdir_rel)
     pcmd += ' --svn 4038' # see main README for instructions on this
@@ -95,7 +95,7 @@ if __name__=='__main__':
     # make el7 wrapping if requested
     if args.el7:
         run_in_container_script = os.path.join(toolsdir, 'run_in_el7_container.sh')
-        cmd = 'bash {} {}'.format(run_in_container_script, cmd)
+        cmd = 'bash {} {}'.format(run_in_container_script, os.path.abspath(exe))
 
     # submit job
     if args.runmode=='condor': ct.submitCommandAsCondorJob('cjob_compilation', cmd, jobflavour='workday')
