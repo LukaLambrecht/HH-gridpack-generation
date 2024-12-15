@@ -180,15 +180,15 @@ if __name__=='__main__':
         cmd = powheg_cmds[step] # note: not step+1!
 
         # check if the command involves condor submission
-        tag = None
-        if ' -q ' in cmd: tag = '-q'
-        if ' --doQueue ' in cmd: tag = '--doQueue'
+        argtag = None
+        if ' -q ' in cmd: argtag = '-q'
+        if ' --doQueue ' in cmd: argtag = '--doQueue'
         iscondor = False
-        if tag is not None:
+        if argtag is not None:
             cmdparts = [part for part in cmd.split(' ') if len(part)!=0]
-            tagidx = cmdparts.index(tag)
-            tagval = cmdparts[tagidx+1]
-            if tagval.lower() != 'none': iscondor = True
+            argtagidx = cmdparts.index(argtag)
+            argtagval = cmdparts[argtagidx+1]
+            if argtagval.lower() != 'none': iscondor = True
 
         # retrieve latest job id
         # (to check new job id against after submission)
