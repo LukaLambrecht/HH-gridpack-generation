@@ -131,10 +131,10 @@ def find_job_status(jobid):
 
     # split the line in parts and put the appropriate elements in a dict
     lineparts = [part for part in lines[0].split(' ') if part!='']
-    ndone = int(lineparts[5])
-    nrunning = int(lineparts[6])
-    nidle = int(lineparts[7])
-    ntotal = int(lineparts[8])
+    ndone = lineparts[5]
+    nrunning = lineparts[6]
+    nidle = lineparts[7]
+    ntotal = lineparts[8]
     res = {
       'done': ndone,
       'running': nrunning,

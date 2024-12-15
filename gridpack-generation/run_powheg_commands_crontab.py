@@ -168,7 +168,7 @@ if __name__=='__main__':
                 logmsg += msg+'\n'
         else:
             msg = 'Job status for jobid {}: {}\n'.format(jobid, njobs)
-            msg += 'Found {} running jobs -> do nothing, exiting.'.format(njobs['done'])
+            msg += 'Found {} running jobs -> do nothing, exiting.'.format(njobs['running'])
             print(msg)
             logmsg += msg+'\n'
             doexit = True
