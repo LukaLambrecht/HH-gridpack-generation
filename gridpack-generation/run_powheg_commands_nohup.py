@@ -103,6 +103,47 @@ def find_running_jobs(jobid):
     ntotal = int(lineparts[8])
     return ntotal
 
+def find_job_status(jobid):
+    # find job status for a specific job id
+    # (similar to find_running_jobs but more detailed output)
+    # output:
+    # - None if something seem wrong with the condor_q output
+    # - 0 if the given jobid is not found (i.e. jobs are finished or were never submitted)
+    # - dict matching job status to number of jobs with that status
+
+    # get the output of condor_q command
+    # and return None if it looks like something is wrong
+    lines = get_condor_q(do_check=True)
+    if lines is None: return None
+
+    # find line corresponding to given job id
+    lines = [line for line in lines if line.split(' ')[2]==str(jobid)]
+    
+    # if no line can be found, return 0
+    if len(lines) == 0: return 0
+
+    # if multiple lines are found, something is wrong, return None
+    if len(lines) > 1:
+        msg = 'WARNING: ambiguity in job id,'
+        msg += ' found multiple lines {} for jobid {}'.format(lines, jobid)
+        print(msg)
+        return None
+
+    # split the line in parts and put the appropriate elements in a dict
+    lineparts = [part for part in lines[0].split(' ') if part!='']
+    ndone = int(lineparts[5])
+    nrunning = int(lineparts[6])
+    nidle = int(lineparts[7])
+    ntotal = int(lineparts[8])
+    res = {
+      'done': ndone,
+      'running': nrunning,
+      'idle': nidle,
+      'total': ntotal
+    }
+
+    return res
+
 
 if __name__=='__main__':
 

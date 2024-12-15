@@ -18,7 +18,7 @@ import time
 import datetime
 import argparse
 from run_powheg_commands_nohup import find_latest_jobid
-from run_powheg_commands_nohup import find_running_jobs
+from run_powheg_commands_nohup import find_job_status
 
 
 if __name__=='__main__':
@@ -146,24 +146,32 @@ if __name__=='__main__':
 
         # check if jobs are still running/pending
         if jobid <= 0: njobs = 0
-        else: njobs = find_running_jobs(jobid)
-        msg = 'Found {} running/pending jobs for jobid {}'.format(njobs, jobid)
+        else: njobs = find_job_status(jobid)
         doexit = False
-        if njobs!=0:
+        if njobs is None:
+            msg = 'Could not determine job status for jobid {}'.format(jobid)
             msg += ' -> do nothing, exiting.'
             print(msg)
-            logmsg += msg+'\n'
+            logmsg += msg + '\n'
             doexit = True
-        else:
+        elif njobs == 0:
             if step == n_powheg_cmds:
+                msg = 'No running jobs found for jobid {}'.format(jobid)
                 msg += ' -> all steps have been completed, exiting.'
                 print(msg)
                 logmsg += msg+'\n'
                 doexit = True
             else:
+                msg = 'No running jobs found for jobid {}'.format(jobid)
                 msg += ' -> submit next step!'
                 print(msg)
                 logmsg += msg+'\n'
+        else:
+            msg = 'Job status for jobid {}: {}\n'.format(jobid, njobs)
+            msg += 'Found {} running jobs -> do nothing, exiting.'.format(njobs['done'])
+            print(msg)
+            logmsg += msg+'\n'
+            doexit = True
         if doexit:
             with open(logfile, 'a') as f: f.write(logmsg)
             sys.exit()
