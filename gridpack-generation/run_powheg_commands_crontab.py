@@ -145,7 +145,7 @@ if __name__=='__main__':
         logmsg += msg+'\n'
 
         # check if jobs are still running/pending
-        if jobid==0: njobs = 0
+        if jobid <= 0: njobs = 0
         else: njobs = find_running_jobs(jobid)
         msg = 'Found {} running/pending jobs for jobid {}'.format(njobs, jobid)
         doexit = False
@@ -171,9 +171,21 @@ if __name__=='__main__':
         # select the next command to run
         cmd = powheg_cmds[step] # note: not step+1!
 
+        # check if the command involves condor submission
+        tag = None
+        if ' -q ' in cmd: tag = '-q'
+        if ' --doQueue ' in cmd: tag = '--doQueue'
+        iscondor = False
+        if tag is not None:
+            cmdparts = [part for part in cmd.split(' ') if len(part)!=0]
+            tagidx = cmdparts.index(tag)
+            tagval = cmdparts[tagidx+1]
+            if tagval.lower() != 'none': iscondor = True
+
         # retrieve latest job id
         # (to check new job id against after submission)
-        oldjobid = find_latest_jobid()
+        oldjobid = None
+        if iscondor: oldjobid = find_latest_jobid()
 
         # run command
         print('Now running the following command:')
@@ -182,15 +194,21 @@ if __name__=='__main__':
         sys.stdout.flush()
         sys.stderr.flush()
         
-        # wait for the condor queue to update correctly
-        time.sleep(1)
+        # retrieve job id of the jobs that were just submitted
+        if iscondor:
         
-        # find and check the job id of the jobs just submitted
-        jobid = find_latest_jobid()
-        if jobid is None: raise Exception('ERROR: no jobs found.')
-        if oldjobid is not None and jobid==oldjobid:
-            msg = 'ERROR: job id equals an already existing job id.'
-            raise Exception(msg)
+            # wait for the condor queue to update correctly
+            time.sleep(1)
+        
+            # find and check the job id of the jobs just submitted
+            jobid = find_latest_jobid()
+            if jobid is None: raise Exception('ERROR: no jobs found.')
+            if oldjobid is not None and jobid==oldjobid:
+                msg = 'ERROR: job id equals an already existing job id.'
+                raise Exception(msg)
+
+        # set some dummy value for job id in case the command ran locally
+        else: jobid = -1
         
         # write info to log file
         logmsg += tag.format(step+1, jobid)+'\n'
