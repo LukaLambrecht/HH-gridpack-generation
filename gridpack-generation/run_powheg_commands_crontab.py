@@ -178,7 +178,7 @@ if __name__=='__main__':
         # run command
         print('Now running the following command:')
         print(cmd)
-        #os.system(cmd)
+        os.system(cmd)
         sys.stdout.flush()
         sys.stderr.flush()
         
