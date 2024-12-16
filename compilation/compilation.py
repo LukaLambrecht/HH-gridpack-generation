@@ -90,9 +90,10 @@ if __name__=='__main__':
     cmd = './{}'.format(exe)
 
     # add grid preprocessing commands if requested
-    preprocess_script = os.path.join(toolsdir, 'preprocess_grid_files.sh')
-    with open(exe, 'a') as f:
-        f.write('bash {} {}\n'.format(preprocess_script, args.workdir))
+    if args.preparegrid:
+        preprocess_script = os.path.join(toolsdir, 'preprocess_grid_files.sh')
+        with open(exe, 'a') as f:
+            f.write('bash {} {}\n'.format(preprocess_script, args.workdir))
 
     # make el7 wrapping if requested
     if args.el7:
