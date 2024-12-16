@@ -13,8 +13,8 @@ if __name__=='__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-i', '--inputfile', required=True, type=os.path.abspath,
       help='Path to the baseline Powheg .input file for this process')
-    parser.add_argument('-m', '--mass', default=125, type=int,
-      help='Mass for the H boson (default: unmodified at 125 GeV)')
+    parser.add_argument('-m', '--mass', default=-1, type=int,
+      help='Mass for the H boson (default: left unmodified in provided input card)')
     parser.add_argument('-w', '--workdir', required=True, type=os.path.abspath,
       help='Set a unique working directory for this process (MUST be inside bin/Powheg!)')
     parser.add_argument('-r', '--runmode', choices=['condor', 'local'], default='condor',
@@ -41,16 +41,18 @@ if __name__=='__main__':
     os.makedirs(args.workdir)
 
     # copy the input file to the working directory
-    newname = os.path.basename(args.inputfile).replace('.input', '_m_{}.input'.format(args.mass))
+    newname = os.path.basename(args.inputfile)
+    if args.mass >= 0: newname = newname.replace('.input', '_m_{}.input'.format(args.mass))
     new_input_file = os.path.join(args.workdir, newname)
     cmd = 'cp {} {}'.format(args.inputfile, new_input_file)
     print('Running {}'.format(cmd))
     os.system(cmd)
 
     # modify the mass setting in the input file
-    cmd = "sed -i -e 's/hmass 125/hmass {}/g' {}".format(args.mass, new_input_file)
-    print('Running {}'.format(cmd))
-    os.system(cmd)
+    if args.mass >= 0:
+        cmd = "sed -i -e 's/hmass 125/hmass {}/g' {}".format(args.mass, new_input_file)
+        print('Running {}'.format(cmd))
+        os.system(cmd)
 
     # find the powheg directory from where to run the compilation command
     # (assume the working directory is located inside that directory)
