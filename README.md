@@ -95,7 +95,7 @@ The basic command sequence to follow is shown below:
 
 ```
 cd bin/Powheg/
-python ./run_pwg_condor.py -p 0 -i production/Run3/13p6TeV/Higgs/gg_HH_HEFT/powheg_ggHH_kl_1p00_kt_1p00_c2_0p00.input -m ggHH -f workdir_powheg_ggHH_kl_1p00_kt_1p00_c2_0p00 --svn 4038
+python ./run_pwg_condor.py -p 0 -i <input file> -m ggHH -f <name of working directory> --svn 4038
 ```
 
 In this command, `-p 0` specifies that the step to be run is the compilation (as opposed to e.g. `-p 1`, `-p 2` and `-p 3` which are steps in the calculation, or `-p 9` which is the final packing of the tarball). The argument `-i` specifies the powheg input file (containing all configuration parameters), `-m` specifies the Powheg process, `-f` is used to choose a working directory where intermediate results will be stored. For the `--svn` argument, see [Fabio's intructions](https://gitlab.cern.ch/hh/hhgridpacks).
@@ -115,6 +115,7 @@ python3 compilation.py -i powheg_ggHH_SM.input -m 100 -w ../CMSSW_10_6_8/src/gen
 
 This will use the vanilla input file `powheg_ggHH_SM.input`, modify the mass to 100 GeV, and use the specified working directory.
 Use `-r condor` to run in a condor job instead of `-r local` to run in the terminal.
+There is also a `--preparegrid` argument available, see the next paragraph.
 
 Note: the instructions do not cover a change in the H mass.
 This can probably be done by modifying the `.input` file above (it has an `hmass` parameter).
@@ -130,10 +131,15 @@ The decay to bb is probably specified in the Pythia configuration later on.
 **Specific for lxplus:** because of the incompatibility between the default lxplus architecture and `CMSSW_10_6_X` (see above), this step needs to be run in an `el7` container. Yet, contrary to the case above for `cmssw-cc7`, we cannot use the standard `cmssw-el7` script since it does not have access to HTCondor. Therefore, a customized script `start_el7_container.sh` is needed. For running the compilation in the terminal, one can start an interactive `el7` container wth HTCondor access by doing `cd tools; ./start_el7_container.sh` and then running the above commands either manually or using `python compilation.py -i <input file> -m <mass> -w <working directory> -r local`. You can exit the container with the `exit` command. For running it in a job, use `python3 compilation.py -i <input file> -m <mass> -w <working directory> -r condor --el7` (you do not have to be in a container to run this command, just specify the `--el7` option).
 
 ## Preprocess the grid files
-Following the instructions without modifications.
+Do the following:
 
 ```
-cd workdir_ggHH_kl_1p00_kt_1p00_c2_0p00
+cd <your chosen working directory>
+```
+
+and then
+
+```
 sed -i -e 's/import lhapdf/#import lhapdf/g' -e 's/pdf=lhapdf.mkPDF(lhaid)/#pdf=lhapdf.mkPDF(lhaid)/g' -e 's/alphas = pdf.alphasQ2(muRs)/alphas = 0.0 #alphas = pdf.alphasQ2(muRs)/g'  creategrid.py
 chhh=$(awk 'sub(/^chhh/,""){printf "%+.4E", $1}' powheg.input)
 ct=$(awk 'sub(/^ct /,""){printf "%+.4E", $1}' powheg.input)
@@ -147,12 +153,16 @@ python3 -c "$pythoncmd"
 
 This creates a `.grid` file named `Virt_full_+1.0000E+00_+1.0000E+00_+0.0000E+00_+0.0000E+00_+0.0000E+00.grid` in the chosen working directory `workdir_powheg_ggHH_kl_1p00_kt_1p00_c2_0p00`.
 
+Note: the above commands assume that the EFT parameters `chhh`, 'ct', 'ctt', 'cg' and 'cgg' are explicitly defined in the powheg `.input` file. This is because this step is based on [Fabio's intructions](https://gitlab.cern.ch/hh/hhgridpacks) with EFT as use case. If these parameters are not defined in your input file, you can use the convenience script below that uses the SM value as a default for each of them.
+
 **For convenience:** these grid preprocessing steps can be run in one go using the script `preprocess_grid_files.sh` in the `tools` subdirectory. It takes one cmd-line arg, namely the working directory. So in this case:
 
 ```
 cd tools
-./preprocess_grid_files.sh ../CMSSW_10_6_8/src/genproductions/bin/Powheg/workdir_ggHH_kl_1p00_kt_1p00_c2_0p00
+./preprocess_grid_files.sh ../CMSSW_10_6_8/src/genproductions/bin/Powheg/workdir_powheg_ggHH_SM_m_100
 ```
+
+Alternatively, one can just add the `--preparegrid` argument to the compilation script (see the previous paragraph), which simply runs the `./preprocess_grid_files.sh` script right after compilation. 
 
 **Specific for lxplus:** it is advised to run these preprocessing steps in an `el7` container just like the previous step.
 Simply use the `./start_el7_container.sh` script before running the preprocessing steps.
@@ -160,6 +170,7 @@ Simply use the `./start_el7_container.sh` script before running the preprocessin
 Note: in the script `creategrid.py` (inside the working directory), the H mass seems to be hard-coded at 125!
 Potentially this needs to be patched as well, to investigate further.
 This might be the cause for crashes observed when running at mass 100.
+Currently running with this patch, maybe to revise later.
 
 ## Run the calculation and make the gridpack
 Follow the instructions without modifications.
