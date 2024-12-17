@@ -17,8 +17,9 @@ import sys
 import time
 import datetime
 import argparse
-from run_powheg_commands_nohup import find_latest_jobid
-from run_powheg_commands_nohup import find_job_status
+sys.path.append(os.path.abspath('../jobtools'))
+from condorqtools import find_latest_jobid
+from condorqtools import find_job_status
 
 
 if __name__=='__main__':
@@ -33,7 +34,7 @@ if __name__=='__main__':
       help='Run in el7 container')
     args = parser.parse_args()
     print('----- {} -----'.format(datetime.datetime.now()))
-    print('Running run_powheg_commands_crontab.py with following configuration:')
+    print('Running run_powheg_commands.py with following configuration:')
     for arg in vars(args): print('  - {}: {}'.format(arg, getattr(args,arg)))
 
     # check command line arg
@@ -93,7 +94,7 @@ if __name__=='__main__':
         toolsdir = os.path.abspath(os.path.join(thisdir, '../tools'))
 
         # make executable script for next steps
-        cmd = 'python3 run_powheg_commands_crontab.py'
+        cmd = 'python3 run_powheg_commands.py'
         cmd += ' -i {} -n {}'.format(args.inputfile, args.name)
         with open(exe, 'w') as f:
             f.write('#!/bin/bash\n')
