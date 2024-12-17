@@ -5,9 +5,13 @@
 # References:
 # - https://gitlab.cern.ch/hh/hhgridpacks
 
+
 # read powheg working directory as cmdline arg
 WORKDIR="$1"
 echo "Working directory: $WORKDIR"
+
+# read the mass a a command line arg (default: -1)
+mass="${2:--1}"
 
 # go into the working directory
 cd "$WORKDIR"
@@ -17,8 +21,14 @@ cd "$WORKDIR"
 cmsenv
 
 # tweak the creategrid.py file
-echo "Tweaking creategrid.py file..."
+echo "Tweaking creategrid.py file to remove lhapdf imports..."
 sed -i -e 's/import lhapdf/#import lhapdf/g' -e 's/pdf=lhapdf.mkPDF(lhaid)/#pdf=lhapdf.mkPDF(lhaid)/g' -e 's/alphas = pdf.alphasQ2(muRs)/alphas = 0.0 #alphas = pdf.alphasQ2(muRs)/g' creategrid.py
+
+# additional tweaking: replace H mass parameter which is hard-coded in the file
+if [ "$mass" -gt 0 ]; then
+    echo "Tweaking creategrid.py file to set the mass to $mass..."
+    sed -i -e "s/mH = .*/mH = float($mass)/g" -e "s/mHs = .*/mHs = float($mass)**2/g" creategrid.py
+fi
 
 # read coupling strengths from powheg input file
 # note: if not found in input file, they are set to standard model values
@@ -52,5 +62,8 @@ fi
 # make the grid
 echo "Preparing the grid..."
 gridtemp="Virt_full_${chhh}_${ct}_${ctt}_${cg}_${cgg}.grid"
+if [ -f "$gridtemp" ]; then
+    rm "$gridtemp"
+fi
 pythoncmd="import creategrid as cg; cg.combinegrids('${gridtemp}', ${chhh}, ${ct}, ${ctt}, ${cg}, ${cgg})"
 python3 -c "$pythoncmd"
