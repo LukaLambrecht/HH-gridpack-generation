@@ -151,7 +151,7 @@ pythoncmd="import creategrid as cg; cg.combinegrids('${gridtemp}', ${chhh}, ${ct
 python3 -c "$pythoncmd"
 ```
 
-This creates a `.grid` file named `Virt_full_+1.0000E+00_+1.0000E+00_+0.0000E+00_+0.0000E+00_+0.0000E+00.grid` in the chosen working directory `workdir_powheg_ggHH_kl_1p00_kt_1p00_c2_0p00`.
+This creates a `.grid` file named `Virt_full_+1.0000E+00_+1.0000E+00_+0.0000E+00_+0.0000E+00_+0.0000E+00.grid` in the chosen working directory.
 
 Note: the above commands assume that the EFT parameters `chhh`, 'ct', 'ctt', 'cg' and 'cgg' are explicitly defined in the powheg `.input` file. This is because this step is based on [Fabio's intructions](https://gitlab.cern.ch/hh/hhgridpacks) with EFT as use case. If these parameters are not defined in your input file, you can use the convenience script below that uses the SM value as a default for each of them.
 
@@ -168,16 +168,24 @@ Alternatively, one can just add the `--preparegrid` argument to the compilation 
 Simply use the `./start_el7_container.sh` script before running the preprocessing steps.
 
 Note: in the script `creategrid.py` (inside the working directory), the H mass seems to be hard-coded at 125!
-Potentially this needs to be patched as well, to investigate further.
+Potentially this needs to be patched as well, to ask around.
 This might be the cause for crashes observed when running at mass 100.
-Currently running with this patch, maybe to revise later.
+To include this patch, just pass a second argument to the `./preprocess_grid_files.sh` script, namely the new mass value, so for example:
+
+```
+cd tools
+./preprocess_grid_files.sh ../CMSSW_10_6_8/src/genproductions/bin/Powheg/workdir_powheg_ggHH_SM_m_100 100
+```
+
+This patch is automatically included in the `compilation.py` script if you set the `-m <mass value>` and `--preparegrid` argument.
 
 ## Run the calculation and make the gridpack
-Follow the instructions without modifications.
+See [Fabio's intructions](https://gitlab.cern.ch/hh/hhgridpacks) for the baseline commands to follow.
 
 Some remarks:
 - The first step (`-p 1`) is repeated several times with different loop numbers (`-x <1 to 5>`). The number of repititions seems to be free to choose. The more loops, the more refined the final grid will be.
 - To investigate whether increasing the number of jobs (`-j`) reduces their runtime, maybe in combination with the number of events (`-n`) argument.
+- Since the `hwidth` (or maybe the `hdecaywidth`) are explicitly set in the powheg input file, runtimes seem to be extremely short (much shorter than what is mentioned by Fabio), while event generation still seems to work fine at first sight. Without setting these parameters, runtimes seemed to be never-ending. To discuss with experts.
 
 **For convenience:** it is quite annoying to monitor all these iterations manually and submit the next batch of jobs when the previous one is done (especially in the case of many gridpacks).
 Therefore, an attempt to automate this procedure has been made.
@@ -187,35 +195,51 @@ Follow these steps (on T2B, for lxplus, see some slight modifications below):
 
 ```
 cd gridpack-generation
-python make_powheg_commands.py -i <path to your powheg input file from the previous steps> -w <path to your powheg working directory from the previous steps> -o <choose an output .txt file name>
+python3 make_powheg_commands.py -i <path to your powheg input file from the previous steps> -w <path to your powheg working directory from the previous steps> -o <choose an output .txt file name>
 ```
 
 This generates the chosen output file, that is simply a txt file with the powheg commands to run (and some auxiliary things, like `cd` and `cmsenv`).
 Now do the following:
 
 ```
-python run_powheg_commands.py -i <the .txt file with powheg commands from the previous step> -l <choose a name of a log .txt file>
+python3 run_powheg_commands.py -i <the .txt file with powheg commands from the previous step> -n <choose a name tag for log and executable files>
 ```
 
 This generates a new log file and also prints some instructions on how to proceed.
 You can now just repeat the same command as above whenever you want, or add it in your crontab file.
 Running this command will check if condor jobs associated with the current step are still running, and if not submit the next step.
 
+Note: do not modify or remove the log file named `log_<chosen name>.txt` until the whole sequence is finished, as it is used by the script to retrieve the job status and decide what next action is appropriate.
+The file `log_<chosen name>_full.txt` is for information/debugging only and could be removed if desired.
+
+Note on parallelization of this step: as with the compilation, it is best to run multiple gridpacks in multiple projects. Moreover, it is probably a good idea to stagger the cron jobs in suchs a way that new condor jobs are not submitted at exactly the same time for different projects, as this could potentially confuse the bookkeeping.
+
 **Specific for lxplus:** a few modifications have to be made on lxplus.
-First of all, in the current standard lxplus terminal, `python` is not defined, but `python3` is, so modify the commands above accordingly.
-The actual powheg commands have to be run from and `el7` container just as before.
+The powheg commands have to be run from and `el7` container just as before.
 Either start an `el7` container with `./start_el7_container.sh` in `tools` when running command by command interactively,
-or add the `--el7` argument to the `run_powheg_commands.py` when running th convenience scripts.
+or add the `--el7` argument to the `run_powheg_commands.py` when running the convenience scripts.
 And finally, since regular `cron` is not accessible on lxplus, use 'authenticated cron' with the `acrontab -e` command.
 The syntax is exactly the same as regular cron, except for an extra field `lxplus.cern.ch` between the time specifiers and the command(s) to run.
 
 ## Check the gridpack
-Follow the instructions with small modifications:
-- wrap in an HTCondor job.
-- change working directory from `/tmp/` (on lxplus) to `$TMPDIR` (on T2B).
-See `gridpack_generation` subdirectory.
+See [Fabio's intructions](https://gitlab.cern.ch/hh/hhgridpacks) for the baseline commands to follow.
+
+**For convenience:** The script `check_gridpack.py` (in the `gridpack_generation` folder) can be used for this step. It wraps the appropriate powheg command in an HTCondor job.
+Example usage:
+
+```
+python3 check_gridpack.py -g ../CMSSW_10_6_8/src/genproductions/bin/Powheg/ggHH_slc7_amd64_gcc700_CMSSW_10_6_8_workdir_powheg_ggHH_SM_m_100.tgz -n 10
+```
+
+This will generate an `.lhe` file with 10 events and copy it to the `gridpack-generation` folder so it can be opened and inspected.
+
+**Specific for lxplus:** Same as before. If running interactively, do it inside a container started with `tools/start_el7_container.sh`. 
+If running in a job, just add the `--el7` argument to the `check_gridpack.py` command.
 
 ## Setting up the sample production software
+
+TODO: update notes for this section.
+
 Clone the repository.
 
 ```
