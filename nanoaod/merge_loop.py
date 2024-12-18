@@ -19,7 +19,10 @@ if __name__=='__main__':
       help='Path to top-level output directory where to store the merged samples')
     parser.add_argument('-g', '--group', default=-1, type=int,
       help='Group size of files to merge (default: merge all files per sample into 1)')
-    parser.add_argument('-r', '--runmode', default='condor', choices=['condor','local'])
+    parser.add_argument('--el7', default=False, action='store_true',
+      help='Run in el7 container')
+    parser.add_argument('-r', '--runmode', default='condor', choices=['condor','local'],
+      help='Run in condor job or locally in the terminal')
     args = parser.parse_args()
     print('Running merge_loop.py with following configuration:')
     for arg in vars(args): print('  - {}: {}'.format(arg, getattr(args,arg)))
@@ -62,11 +65,16 @@ if __name__=='__main__':
     if go!='y': sys.exit()
 
     # loop over samples
+    cmds = []
     for sample, outputdir in zip(args.samples, outputdirs):
         # make the merge command
         cmd = 'python3 merge.py'
         cmd += ' -s {}'.format(sample)
         cmd += ' -o {}'.format(outputdir)
         cmd += ' -g {}'.format(args.group)
+        if args.el7: cmd += ' --el7'
         cmd += ' -r {}'.format(args.runmode)
-        os.system(cmd)
+        cmds.append(cmd)
+
+    # run commands
+    for cmd in cmds: os.system(cmd)

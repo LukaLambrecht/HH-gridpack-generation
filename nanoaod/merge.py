@@ -6,6 +6,8 @@ import sys
 import six
 import glob
 import argparse
+sys.path.append(os.path.abspath('../jobtools'))
+import condortools as ct
 
 
 def print_iostruct(iostruct):
@@ -24,7 +26,10 @@ if __name__=='__main__':
       help='Path to output directory where to store the merged sample')
     parser.add_argument('-g', '--group', default=-1, type=int,
       help='Group size of files to merge (default: merge all files into 1)')
-    parser.add_argument('-r', '--runmode', default='condor', choices=['condor','local'])
+    parser.add_argument('--el7', default=False, action='store_true',
+      help='Run in el7 container')
+    parser.add_argument('-r', '--runmode', default='condor', choices=['condor','local'],
+      help='Run in condor job or locally in the terminal')
     args = parser.parse_args()
     print('Running merge.py with following configuration:')
     for arg in vars(args): print('  - {}: {}'.format(arg, getattr(args,arg)))
@@ -65,19 +70,28 @@ if __name__=='__main__':
         os.system('rm -r {}'.format(args.outputdir))
     os.makedirs(args.outputdir)
 
-    # set CMSSW version (needed for haddnano.py command)
+    # set CMSSW version (needed for haddnano.py command) and container script
     cmssw = os.path.abspath('../CMSSW_13_3_1')
     cmsenv = 'cd {}; cmsenv'.format(os.path.join(cmssw,'src'))
+    thisdir = os.path.abspath(os.path.dirname(__file__))
+    toolsdir = os.path.abspath(os.path.join(thisdir, '../tools'))
+    el7script = os.path.join(toolsdir, 'run_in_el7_container.sh')
 
     # loop over groups
     for outputfile, inputfiles in iostruct.items():
-    # make the haddnano command
-        cmd = 'haddnano.py'
-        cmd += ' {}'.format(os.path.join(args.outputdir,outputfile))
-        for f in inputfiles: cmd += ' {}'.format(f)
+        # make the haddnano command
+        haddnano = 'haddnano.py'
+        haddnano += ' {}'.format(os.path.join(args.outputdir,outputfile))
+        for f in inputfiles: haddnano += ' {}'.format(f)
+        # write executable
+        exe = os.path.abspath('exe_merge.sh')
+        exe = ct.makeUnique(exe)
+        with open(exe, 'w') as f:
+            f.write(cmsenv+'\n')
+            f.write(haddnano+'\n')
+        os.system('chmod +x {}'.format(exe))
+        cmd = exe
+        if args.el7: cmd = '{} {}'.format(el7script, exe)
         # run the command
-        if args.runmode=='local':
-            fullcmd = cmsenv + '; ' + cmd
-            os.system(fullcmd)
-        elif args.runmode=='condor':
-          ct.submitCommandAsCondorJob('cjob_merge', cmd, cmssw=cmssw)
+        if args.runmode=='local': os.system(cmd)
+        elif args.runmode=='condor': ct.submitCommandAsCondorJob('cjob_merge', cmd)
