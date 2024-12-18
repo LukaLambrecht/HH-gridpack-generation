@@ -238,26 +238,56 @@ If running in a job, just add the `--el7` argument to the `check_gridpack.py` co
 
 ## Setting up the sample production software
 
-TODO: update notes for this section.
-
-Clone the repository.
+Clone the `private_production` repository as follows:
 
 ```
 cd CMSSW_10_6_8/src/
 cmsenv
 git clone https://github.com/ekoenig4/private_production.git
-cd private_production
-cd HIG-Run3Summer22EE
 ```
 
-Note: the Pythia fragment is located under `Template/Configuration/GenProduction/python/HIG-Run3Summer22EEwmLHEGS-00282-fragment_powheg.py`. The decay of the H boson to b quarks is specified by the `25:onMode = off` and `25:onIfMatch = 5 -5` parameters.
+**Specific for lxplus:** Just as with the `genproductions` package, since we are using CMSSW_10_6_X, this needs to be run in a container.
+Use `cmssw-cc7` before installing CMSSW. Exit the container with the `exit` command.
+
+**For convenience:** The steps above can be run in one go using the `./install-private-production.sh` script.
+On lxplus, either run this inside a `cmssw-cc7` container, or directly run `./install-private-production-lxplus.sh`, which sets up the container for you.
+
+## Building a simpack
+
+See [Evan's instructions](https://github.com/ekoenig4/private_production) for the baseline commands to follow.
+
+Note: the actual Pythia fragment that will be used is located under `Template/Configuration/GenProduction/python/HIG-Run3Summer22EEwmLHEGS-00282-fragment_powheg.py`.
+This template is automatically copied to the simpack (along with some other templates).
+The decay of the H boson to b quarks is specified by the `25:onMode = off` and `25:onIfMatch = 5 -5` parameters.
 
 Note: the Pythia fragment also has a parameter `POWHEG:nFinal = 3`.
 Still to ask if it means what it seems to mean, but should probably be changed to 2.
-See e.g. [here](https://cms-pdmv-prod.web.cern.ch/mcm/public/restapi/requests/get_fragment/TSG-Run3Summer22EEwmLHEGS-00013/0)) for an example fragment of a central HH sample.
+See e.g. [here](https://cms-pdmv-prod.web.cern.ch/mcm/public/restapi/requests/get_fragment/TSG-Run3Summer22EEwmLHEGS-00013/0) for an example fragment of a central HH sample.
+Update from Evan: used to be 2, but changed to 3 for ZH sample.
+Not yet fully clear what it means, probably 2 is the right value, but to double check with an expert.
 
-Note: the Pythia fragment also has an H mass parameter.
-Not sure what happen if the value in the gridpack and in the Pythia fragment do not agree, but probably best to synchronize them.
-Yet to find out how to do this automatically and systematically.
-For the gridpack one can just create different input files and run them in parallel (?).
-Not sure how to best synchronize the the Pythia fragment though.
+Note: the Pythia fragment also has an parameter for the H mass.
+Not sure what happens if the value in the gridpack and in the Pythia fragment do not agree, but probably best to synchronize them.
+
+Note: not yet fully clear if the `private_production` repo only works for the `Summer22EE` period, or how to switch different data taking conditions. To ask.
+
+**For convenience:** There is a script `build_simpack.py` (inside the `nanoaod` folder), that takes care of building the simpack and doing some patches.
+In particular, it fixes the Pythia fragment as detailed above (with configurable H mass), and modifies some settings in the `crabConfig.py` file for CRAB submission.
+Example usage:
+
+```
+python3 build_simpack.py -g ~/gridpack-storage/HH-m-100/ggHH_slc7_amd64_gcc700_CMSSW_10_6_8_workdir_powheg_ggHH_SM_m_100.tgz -o HH-samples -m 100 -n powheg_ggHH_SM_m_100 --events_per_job 100 --total_events 10000
+```
+
+This will create a folder under `CMSSW_10_6_8/src/private_production/HIG-Run3Summer22EE/simpacks` with the name of your choice.
+Inside that folder, check the `crabConfig.py` file and `Configuration/GenProduction/python/HIG-Run3Summer22EEwmLHEGS-00282-fragment_powheg.py` file, to make sure the patches were succesfull.
+The `-o` argument specifies the top-level output directory for the finished samples.
+Its physical location depends on the storage site, but for `T3_CH_CERNBOX` it is located at `/eos/user/l/llambrec/<the name you chose>`.
+
+## Submit sample production via CRAB
+
+The simpack takes care of everything.
+Simply move inside the simpack folder (under `CMSSW_10_6_8/src/private_production/HIG-Run3Summer22EE/simpacks`) and run `bash submit_crab.sh` (after doing the checks mentioned above).
+Monitor the status of the jobs via `bash crab_status.sh crab_logs/<crab working directory>`.
+
+Note: a valid grid certificate is needed for this step.
