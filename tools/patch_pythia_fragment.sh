@@ -11,7 +11,7 @@
 fragment="$1"
 echo "Fragment: $fragment"
 
-# read the mass a a command line arg (default: -1)
+# read the mass as a command line arg (default: -1)
 mass="${2:--1}"
 mass_formatted=`printf "%.1f" $mass`
 
