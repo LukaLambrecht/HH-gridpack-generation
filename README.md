@@ -335,7 +335,14 @@ Since events take a long time to generate, the CRAB jobs above are typically lim
 Each job generates a separate ROOT file, but for the next steps it is often more convenient to work with fewer files with more events per file.
 Hence it is useful to perform a merging procedure after all CRAB jobs have finished but before continuing to the next step.
 
-TO DO
+For this purpose, use `merge.py` (inside the `nanoaod` folder), or `merge_loop.py` for merging multiple samples in one go.
+Run `python3 merge.py -h` to see the command line arguments.
+
+Note: though there is a `--runmode [local/condor]` argument, job submisson does not seem to work yet for these scripts (some `/eos/` access problem from inside an `el7` container inside a job), so always use `-r local` for now.
+
+Note: for this to work, NanoAOD-tools must be installed first (because the merging is done using the `haddnano.py` script from NanoAOD-tools), see the next step.
+
+**Specific for lxplus:** This needs to be run inside an `el7` container. 
 
 
 ## Setting up the ntuplizer
