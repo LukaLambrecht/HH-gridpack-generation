@@ -131,7 +131,7 @@ def web( data, webpath, force=False ):
     page += '<body>\n'
     page += '<table style="background-color:#2C3E50;color:#EAECEE;'
     page += 'font-size:40px;width:100%;text-align: center;">'
-    page += '<tr><td>Status of ntuple production</td></tr>'
+    page += '<tr><td>Status of CRAB jobs</td></tr>'
     page += '<tr><td style="font-size:15px;">Last update: '+now.strftime("%d/%m/%Y %H:%M:%S")+'</td></tr>'
     page += '</table>\n'
 
