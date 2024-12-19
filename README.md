@@ -355,4 +355,13 @@ On lxplus, either run this inside a `cmssw-cc7` container, or directly run `./in
 
 ## Running the ntuplizer
 
-TO DO
+Processing sequence:
+- `NanoHH4b/run/run.py`: main body just calls function `main` -> function `main` (reads cmd line args) -> `_main` (initializes configuration and parses some cmd line args) -> `_process` (sets input datasets and output dirs, configures reweighting, gets golden json, calls next function for nominal and for JES/JER variations).
+- `NanoHH4b/run/runPostProcessing.py`: function `run` (calls `run_add_weight`, then `run_merge`, then `run_all` (for interactive) or `submit` (for condor) or `submit_slurm` (for slurm)) -> `run_all` (seems to do nothing, just `pass`...) / `submit` (creates job dirs, output dirs, job description files, and submits the jobs; the executable is `run_postproc_condor.sh`).
+- `NanoHH4b/run/run_postproc_condor.sh`: sets up the environment and calls `./processor.py`.
+- `NanoHH4b/run/processor.py` runs on one or multiple input files (either local or remote), output dir is part of the metadata provided as input; sets up the file prefix, sets up and calls the postprocessor, hadds all output files. Ultimately calls `nano_postproc.py` which is part of NanoAOD-tools.
+- `NanoAODTools/scripts/nano_postproc.py`: creates and runs a PostProcessor.
+
+Other preliminary notes:
+- How to disable systemtics for speed? Oddly enough, this cannot be specified as a command line arg, but must be set in the config file. Make a copy and modify it as needed here: `configs/2022/test/run3_2022_0L_PNet_test.yaml`.
+- How to specify the list of samples to process? Do not use the command line arg `-d`, it gets overwritten by the config file... So specify it directly in the config file, but only give the top-level directory. The structure must correspond to the following pattern: `<top-level dir>/<year (2022)>/<channel (0L)>_<type (mc)>.yaml`
