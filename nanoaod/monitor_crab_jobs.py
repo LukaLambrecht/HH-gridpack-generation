@@ -255,6 +255,27 @@ if __name__ == '__main__':
     if args.proxy is not None:
         os.system('export X509_USER_PROXY={}'.format(args.proxy))
 
+    # print check of proxy to screen
+    # (can help in debugging)
+    print('Found following proxy info:')
+    os.system('voms-proxy-info')
+
+    # check proxy
+    tmpfile = 'monitor_tmp_proxy.txt'
+    os.system('voms-proxy-info >> {} 2>&1'.format(tmpfile))
+    with open(tmpfile, 'r') as f:
+        lines = f.readlines()
+    os.system('rm {}'.format(tmpfile))
+    msg = ''
+    for line in lines:
+        if 'Proxy not found' in line:
+            msg = 'No proxy found, please create a new one.'
+        if line.startswith('timeleft'):
+            line = line.strip(' \t\n')
+            if line.endswith('00:00:00'):
+                msg = 'Proxy expired, please create a new one.'
+    if len(msg) > 0: raise Exception(msg)
+
     # initializations
     data = {'meta': {'generating script': os.path.abspath(__file__),
             'command-line arguments': str(args)},
@@ -290,7 +311,7 @@ if __name__ == '__main__':
             msg += 'for sample {}.'.format(f)
             raise Exception(msg)
         cmd = 'cd {}'.format(workdir)
-        cmd += '; bash crab_status.sh {} >> {} 2>&1'.format(f, tmpfile)
+        cmd += '; bash crab_status.sh {} >> {}'.format(f, tmpfile)
         cmds.append(cmd)
 
     # initialize all samples to 0% finished and empty grafana link

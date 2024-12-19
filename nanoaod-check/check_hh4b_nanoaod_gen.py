@@ -9,15 +9,28 @@ from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
 
 import matplotlib.pyplot as plt
 
+import argparse
+
 
 if __name__=='__main__':
 
-    # read input file
-    inputfile = sys.argv[1]
+    # read command line arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-i', '--inputfile', required=True, type=os.path.abspath,
+      help='Path to NanoAOD input file')
+    parser.add_argument('--xmin', default=100, type=int,
+      help='x-axis minimum for invariant mass plots')
+    parser.add_argument('--xmax', default=150, type=int,
+      help='x-axis maximum for invariant mass plots')
+    parser.add_argument('--nbins', default=50, type=int,
+      help='number of bins for invariant mass plots')
+    args = parser.parse_args()
+    print('Running check_hh4b_nanoaod_gen.py with following configuration:')
+    for arg in vars(args): print('  - {}: {}'.format(arg, getattr(args,arg)))
 
     # read input file
     events = NanoEventsFactory.from_root(
-               {inputfile: 'Events'},
+               {args.inputfile: 'Events'},
                schemaclass=NanoAODSchema).events()
     print('Number of events: {}'.format(ak.num(events.run.compute(), axis=0)))
 
@@ -58,8 +71,7 @@ if __name__=='__main__':
                      & (np.abs(genjets.eta)<5) ]
 
     # select events with at least 4 selected b-jets
-    # note: only very few events are passing, so maybe relax to 3 or 2?
-    event_selection_mask = (ak.num(bjets)>3)
+    event_selection_mask = (ak.num(bjets)>=4)
     print(event_selection_mask.compute())
     npass = ak.sum(event_selection_mask).compute()
     ntot = len(event_selection_mask.compute())
@@ -79,7 +91,7 @@ if __name__=='__main__':
 
     # make a plot of decay product invariant mass
     fig, axs = plt.subplots(ncols=2, figsize=(12,6))
-    bins = np.linspace(90, 105, num=50)
+    bins = np.linspace(args.xmin, args.xmax, num=args.nbins)
     ax = axs[0]
     ax.hist(h1_children_mass, bins=bins, color='dodgerblue')
     ax.set_xlabel('Invariant mass of H_1 decay products (GeV)', fontsize=12)
@@ -92,7 +104,7 @@ if __name__=='__main__':
 
     # make a plot of gen jet invariant mass
     fig, axs = plt.subplots(ncols=2, figsize=(12,6))
-    bins = np.linspace(50, 150, num=50)
+    bins = np.linspace(args.xmin, args.xmax, num=args.nbins)
     ax = axs[0]
     ax.hist(h1_genjets_mass, bins=bins, color='dodgerblue')
     ax.set_xlabel('Invariant mass of H_1 matched gen-jets (GeV)', fontsize=12)
