@@ -24,21 +24,21 @@ Where applicable, differences between lxplus and T2B are detailed in the steps b
 Git clone this repository:
 
 ```
-git clone https://github.com/LukaLambrecht/HH-sample-production.git
+git clone https://github.com/LukaLambrecht/HH-gridpack-generation.git
 ```
 
 When installing multiple copies of the repository side by side (e.g. for generating multiple gridpacks in parallel with different H mass values, see also below), you can specify a unique name for each. For example:
 
 ```
-git clone https://github.com/LukaLambrecht/HH-sample-production.git HH-sample-production-m-100
+git clone https://github.com/LukaLambrecht/HH-gridpack-generation.git HH-gridpack-generation-m-100
 ```
 
 
 ## Setting up the gridpack generation software
-Set up a suitable CMSSW release and git clone the `genproductions` repository (fork by Fabio Monti) into it. All of this preferably inside the `HH-sample-production` folder to keep things orderly, but not necessarily. The basic command sequence goes as follows:
+Set up a suitable CMSSW release and git clone the `genproductions` repository (fork by Fabio Monti) into it. All of this preferably inside the `HH-gridpack-generation` folder to keep things orderly, but not necessarily. The basic command sequence goes as follows:
 
 ```
-cd HH-sample-production
+cd HH-gridpack-generation
 cmsrel CMSSW_10_6_8
 cd CMSSW_10_6_8/src/
 cmsenv
@@ -78,7 +78,7 @@ git checkout
 
 Note that this might not work with older git versions.
 
-**For convenience:** All of these steps can be done slightly more conveniently in one go by running `./install-genproductions.sh` from inside the `HH-sample-production` main directory. On lxplus, this needs to be run in a `cmssw-cc7` container as explained above, or alternatively you can run the dedicated `./install-genproductions-lxplus.sh` script that automatically opens a suitable container to run the CMSSW installation in.
+**For convenience:** All of these steps can be done slightly more conveniently in one go by running `./install-genproductions.sh` from inside the `HH-gridpack-generation` main directory. On lxplus, this needs to be run in a `cmssw-cc7` container as explained above, or alternatively you can run the dedicated `./install-genproductions-lxplus.sh` script that automatically opens a suitable container to run the CMSSW installation in.
 
 **Specific for T2B:** Some tweaking of the working directory settings seems to be needed (after installation, before running the next steps),
 probably because of different settings HTCondor between lxplus and T2B.
