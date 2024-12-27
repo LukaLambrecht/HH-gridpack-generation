@@ -26,18 +26,24 @@ if __name__=='__main__':
       help='Path to output directory where to store the merged sample')
     parser.add_argument('-g', '--group', default=-1, type=int,
       help='Group size of files to merge (default: merge all files into 1)')
-    parser.add_argument('--el7', default=False, action='store_true',
-      help='Run in el7 container')
+    parser.add_argument('--cmssw', default=None,
+      help='Path to CMSSW installation to do cmsenv (needed for haddnano.py)'
+          +' (choose an intallation compatible with current el9 lxplus architecture, e.g. 14+)')
     parser.add_argument('-r', '--runmode', default='condor', choices=['condor','local'],
       help='Run in condor job or locally in the terminal')
     args = parser.parse_args()
     print('Running merge.py with following configuration:')
     for arg in vars(args): print('  - {}: {}'.format(arg, getattr(args,arg)))
 
-    # check command line arg
+    # check command line args
     if not os.path.exists(args.sample):
         msg = 'Provided sample {} does not exist.'.format(args.sample)
         raise Exception(msg)
+    cmssw = os.path.abspath(args.cmssw) if args.cmssw is not None else None
+    if cmssw is not None:
+        if not os.path.exists(cmssw):
+            msg = 'Provided CMSSW installation {} does not exist.'.format(cmssw)
+            raise Exception(msg)
 
     # find all files in this sample
     pattern = os.path.join(args.sample, '**', 'ntuple_*.root')
@@ -70,28 +76,15 @@ if __name__=='__main__':
         os.system('rm -r {}'.format(args.outputdir))
     os.makedirs(args.outputdir)
 
-    # set CMSSW version (needed for haddnano.py command) and container script
-    cmssw = os.path.abspath('../CMSSW_13_3_1')
-    cmsenv = 'cd {}; cmsenv'.format(os.path.join(cmssw,'src'))
-    thisdir = os.path.abspath(os.path.dirname(__file__))
-    toolsdir = os.path.abspath(os.path.join(thisdir, '../tools'))
-    el7script = os.path.join(toolsdir, 'run_in_el7_container.sh')
-
     # loop over groups
     for outputfile, inputfiles in iostruct.items():
         # make the haddnano command
         haddnano = 'haddnano.py'
         haddnano += ' {}'.format(os.path.join(args.outputdir,outputfile))
         for f in inputfiles: haddnano += ' {}'.format(f)
-        # write executable
-        exe = os.path.abspath('exe_merge.sh')
-        exe = ct.makeUnique(exe)
-        with open(exe, 'w') as f:
-            f.write(cmsenv+'\n')
-            f.write(haddnano+'\n')
-        os.system('chmod +x {}'.format(exe))
-        cmd = exe
-        if args.el7: cmd = '{} {}'.format(el7script, exe)
         # run the command
-        if args.runmode=='local': os.system(cmd)
-        elif args.runmode=='condor': ct.submitCommandAsCondorJob('cjob_merge', cmd)
+        if args.runmode=='local':
+            cmd = haddnano
+            if cmssw is not None: cmd = 'cd {}; cmsenv; '.format(cmssw) + haddnano
+            os.system(cmd)
+        elif args.runmode=='condor': ct.submitCommandAsCondorJob('cjob_merge', haddnano, cmssw_version=cmssw)

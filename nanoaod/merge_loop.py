@@ -19,8 +19,9 @@ if __name__=='__main__':
       help='Path to top-level output directory where to store the merged samples')
     parser.add_argument('-g', '--group', default=-1, type=int,
       help='Group size of files to merge (default: merge all files per sample into 1)')
-    parser.add_argument('--el7', default=False, action='store_true',
-      help='Run in el7 container')
+    parser.add_argument('--cmssw', default=None,
+      help='Path to CMSSW installation to do cmsenv (needed for haddnano.py)'
+          +' (choose an intallation compatible with current el9 lxplus architecture, e.g. 14+)')
     parser.add_argument('-r', '--runmode', default='condor', choices=['condor','local'],
       help='Run in condor job or locally in the terminal')
     args = parser.parse_args()
@@ -31,6 +32,11 @@ if __name__=='__main__':
     for sample in args.samples:
         if not os.path.exists(sample):
             msg = 'Provided sample {} does not exist.'.format(sample)
+            raise Exception(msg)
+    cmssw = os.path.abspath(args.cmssw) if args.cmssw is not None else None
+    if cmssw is not None:
+        if not os.path.exists(cmssw):
+            msg = 'Provided CMSSW installation {} does not exist.'.format(cmssw)
             raise Exception(msg)
 
     # count the files in the samples
@@ -72,7 +78,7 @@ if __name__=='__main__':
         cmd += ' -s {}'.format(sample)
         cmd += ' -o {}'.format(outputdir)
         cmd += ' -g {}'.format(args.group)
-        if args.el7: cmd += ' --el7'
+        if cmssw is not None: cmd += ' --cmssw {}'.format(cmssw)
         cmd += ' -r {}'.format(args.runmode)
         cmds.append(cmd)
 
