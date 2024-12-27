@@ -1,4 +1,4 @@
-# HH sample generation with different H masses
+# HH gridpack generation with different H masses
 
 
 ### Preamble
@@ -18,9 +18,6 @@ Where applicable, differences between lxplus and T2B are detailed in the steps b
 **Open questions:** Before moving on to mass production of samples, some open questions need to be resolved:
 - Double-check settings in powheg input card with experts, in particular the `hwidth` and `hdecaywidth` setting.
 - Double-check whether the `creategrid.py` file must be tweaked to change the H mass.
-- Double-check H mass setting in Pythia fragment.
-- Double-check `POWHEG:nFinal` setting in Pythia fragment.
-- Find out how to set appropriate detector conditions.
 
 
 ## Installation of this repository
@@ -245,104 +242,9 @@ This will generate an `.lhe` file with 10 events and copy it to the `gridpack-ge
 If running in a job, just add the `--el7` argument to the `check_gridpack.py` command.
 
 
-## Setting up the sample production software
-
-Clone the `private_production` repository as follows:
-
-```
-cd CMSSW_10_6_8/src/
-cmsenv
-git clone https://github.com/ekoenig4/private_production.git
-```
-
-Additionally, one extra utility script could be added to the `private_production` repository.
-It is not required for normal operation, but allows running the `crab resubmit` command in a container
-(while the repo as it is only has the `crab submit` and `crab status` commands in a container).
-To add this script, go to the `tools` directory and run `./add_crab_command_script.sh <path to the private_production repo>`. 
-This step is also automatically included in the installer script (see below).
-
-**Specific for lxplus:** Just as with the `genproductions` package, since we are using CMSSW_10_6_X, this needs to be run in a container.
-Use `cmssw-cc7` before installing CMSSW. Exit the container with the `exit` command.
-
-**For convenience:** The steps above can be run in one go using the `./install-private-production.sh` script.
-On lxplus, either run this inside a `cmssw-cc7` container, or directly run `./install-private-production-lxplus.sh`, which sets up the container for you.
-
-
-## Building a simpack
-
-See [Evan's instructions](https://github.com/ekoenig4/private_production) for the baseline commands to follow.
-
-Note: the actual Pythia fragment that will be used is located under `Template/Configuration/GenProduction/python/HIG-Run3Summer22EEwmLHEGS-00282-fragment_powheg.py`.
-This template is automatically copied to the simpack (along with some other templates).
-The decay of the H boson to b quarks is specified by the `25:onMode = off` and `25:onIfMatch = 5 -5` parameters.
-
-Note: the Pythia fragment also has a parameter `POWHEG:nFinal = 3`.
-Still to ask if it means what it seems to mean, but should probably be changed to 2.
-See e.g. [here](https://cms-pdmv-prod.web.cern.ch/mcm/public/restapi/requests/get_fragment/TSG-Run3Summer22EEwmLHEGS-00013/0) for an example fragment of a central HH sample.
-Update from Evan: used to be 2, but changed to 3 for ZH sample.
-Not yet fully clear what it means, probably 2 is the right value, but to double check with an expert.
-
-Note: the Pythia fragment also has an parameter for the H mass.
-Not sure what happens if the value in the gridpack and in the Pythia fragment do not agree, but probably best to synchronize them.
-
-Note: not yet fully clear if the `private_production` repo only works for the `Summer22EE` period, or how to switch different data taking conditions. To ask.
-
-**For convenience:** There is a script `build_simpack.py` (inside the `nanoaod` folder), that takes care of building the simpack and doing some patches.
-In particular, it fixes the Pythia fragment as detailed above (with configurable H mass), and modifies some settings in the `crabConfig.py` file for CRAB submission.
-Example usage:
-
-```
-python3 build_simpack.py -g ~/gridpack-storage/HH-m-100/ggHH_slc7_amd64_gcc700_CMSSW_10_6_8_workdir_powheg_ggHH_SM_m_100.tgz -o HH-samples -m 100 -n powheg_ggHH_SM_m_100 --events_per_job 100 --total_events 10000
-```
-
-This will create a folder under `CMSSW_10_6_8/src/private_production/HIG-Run3Summer22EE/simpacks` with the name of your choice.
-Inside that folder, check the `crabConfig.py` file and `Configuration/GenProduction/python/HIG-Run3Summer22EEwmLHEGS-00282-fragment_powheg.py` file, to make sure the patches were succesfull.
-
-The `-o` argument specifies the top-level output directory for the finished samples.
-Its physical location depends on the storage site, but for `T3_CH_CERNBOX` it is located at `/eos/user/l/llambrec/<the name you chose>`.
-In more detail, once the CRAB jobs are submitted (see below), finished files will start to appear in `/eos/user/<initial of lxplus username>/<lxplus username>/<top-level output directory name>/CRAB_PrivateMC/<sample name>/<timestamp>/0000/ntuple_<number>.root`.
-So for example in the case above: `/eos/user/l/llambrec/HH-samples/CRAB_PrivateMC/powheg_ggHH_SM_m_100/241217_215544/0000/ntuple_<1 to 100>.root`.
-
-
-## Submit sample production via CRAB and monitoring of CRAB jobs
-
-For submission, move inside the simpack folder (under `CMSSW_10_6_8/src/private_production/HIG-Run3Summer22EE/simpacks`) and run `bash submit_crab.sh` (after doing the checks mentioned above).
-Monitor the status of the jobs via `bash crab_status.sh crab_logs/<CRAB working directory>`.
-
-Note: a valid grid certificate and active proxy are needed for this step.
-
-**For convenience:** In the case of multiple sample production in parallel, it could be somewhat tedious to go into every simpack and run the `crab_status.sh` in each, one after the other.
-To streamline this, a utility script `monitor_crab_jobs.py` (inside the `nanoaod` folder) is provided that runs the `crab_status.sh` script on multiple crab working directories and makes an overview of the results. 
-Example usage:
-
-```
-python3 monitor_crab_jobs.py -i ../CMSSW_10_6_8/src/private_production/HIG-Run3Summer22EE/simpacks/ -p x509up_u116295 -r
-```
-
-This will scan the provided `simpacks` directory and run `crab_status.sh` on each of the CRAB working directories inside of it.
-The `-p` argument allows you to specify the path to an active proxy (to avoid having to type your password for generating a new one).
-The `-r` argument means that `crab resubmit` should be called on failed jobs.
-(Note that for this last bit to work, the `crab_command.sh` script must have been added during installation, see above.)
-
-The output of `monitor_crab_jobs.py` is an `index.html` file which you can open in a web browser, looking something like this:
-
-<img src="docs/crab_monitor_example.png" height="300px">
-
-
-## Merging CRAB output files
-
-Since events take a long time to generate, the CRAB jobs above are typically limited to O(100) events.
-Each job generates a separate ROOT file, but for the next steps it is often more convenient to work with fewer files with more events per file.
-Hence it is useful to perform a merging procedure after all CRAB jobs have finished but before continuing to the next step.
-
-For this purpose, use `merge.py` (inside the `nanoaod` folder), or `merge_loop.py` for merging multiple samples in one go.
-Run `python3 merge.py -h` to see the command line arguments.
-
-Note: though there is a `--runmode [local/condor]` argument, job submisson does not seem to work yet for these scripts (some `/eos/` access problem from inside an `el7` container inside a job), so always use `-r local` for now.
-
-Note: for this to work, NanoAOD-tools must be installed first (because the merging is done using the `haddnano.py` script from NanoAOD-tools), see the next step.
-
-**Specific for lxplus:** This needs to be run inside an `el7` container. 
+## NanoAOD sample generation
+This step has been moved to a separate repository!
+See [here](https://github.com/LukaLambrecht/private-sample-production)
 
 
 ## Setting up the ntuplizer
