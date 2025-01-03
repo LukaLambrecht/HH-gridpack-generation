@@ -3,12 +3,9 @@
 
 ### Preamble
 See instructions here:
-- [README by Fabio Monti](https://gitlab.cern.ch/hh/hhgridpacks) (for gridpack generation)
-- [CMS Generator central place: POWHEG BOX](https://cms-gen.gitbook.io/cms-generator-central-place/how-to-produce-gridpacks/powheg-box) (for gridpack generation)
-- [Private production repo by Evan Koenig](https://github.com/ekoenig4/private_production) (for NanoAOD sample production)
-- [HH4b ntuplizer](https://gitlab.cern.ch/gouskos/hh4b_run3/-/tree/run2?ref_type=heads) (for ntuple production)
-
-See also Thomas' lab notes for additional instructions!
+- [README by Fabio Monti](https://gitlab.cern.ch/hh/hhgridpacks)
+- [CMS Generator central place: POWHEG BOX](https://cms-gen.gitbook.io/cms-generator-central-place/how-to-produce-gridpacks/powheg-box)
+- See also Thomas' lab notes for additional instructions!
 
 **lxplus vs T2B:** So far, the procedures below have been developed and tested both on lxplus and my local (Belgian) T2B.
 (To do: repeat on both systems after this repository has reached a more mature and stable state).
