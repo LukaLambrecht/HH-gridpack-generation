@@ -247,15 +247,12 @@ This step has been moved to a separate repository!
 See [here](https://github.com/LukaLambrecht/private-sample-production)
 
 
-## Setting up the ntuplizer
+## HH4b ntuplizer
+This step is performed using the [HH4b ntuplizer](https://gitlab.cern.ch/gouskos/hh4b_run3/-/tree/run2?ref_type=heads).
 
-See the [HH4b ntuplizer](https://gitlab.cern.ch/gouskos/hh4b_run3/-/tree/run2?ref_type=heads) for baseline command sequence to follow.
-
-**For convenience:** The steps above can be run in one go using the `./install-ntuplizer.sh` script.
-On lxplus, either run this inside a `cmssw-cc7` container, or directly run `./install-ntuplizer-lxplus.sh`, which sets up the container for you.
-
-
-## Running the ntuplizer
+The below are just preliminary notes while trying to run the ntuplizer,
+kept only until they have been resolved or moved to a more appropriate place
+(e.g. the README of the ntuplizer repo).
 
 Processing sequence:
 - `NanoHH4b/run/run.py`: main body just calls function `main` -> function `main` (reads cmd line args) -> `_main` (initializes configuration and parses some cmd line args) -> `_process` (sets input datasets and output dirs, configures reweighting, gets golden json, calls next function for nominal and for JES/JER variations).
@@ -266,8 +263,3 @@ Processing sequence:
 
 Other preliminary notes:
 - When running with condor submission, it seems to be necessary to have a valid proxy (in `/tmp/x509up_<your proxy number>`), even though no remote file reading or processing is needed. But even with a proxy, the job still is held, seemingly for this reason. Maybe the proxy needs to be copied to the worker node somehow? It seems to be fixed by copying the proxy to somewhere on `/afs` (not `/tmp` and not `/eos`), and then providing the argument `--extra-transfer <path to proxy on afs>`.
-- How to disable systemtics for speed? Oddly enough, this cannot be specified as a command line arg, but must be set in the config file. Make a copy and modify it as needed here: `configs/2022/test/run3_2022_0L_PNet_test.yaml`.
-- How to specify the list of samples to process? Do not use the command line arg `-d`, it gets overwritten by the config file... So specify it directly in the config file, but only give the top-level directory. The structure must correspond to the following pattern: `<top-level dir>/<year (2022)>/<channel (0L)>_<type (mc)>.yaml`.
-- How to format the sample list? See examples for correct formatting. The sample directories should not be full paths, but rather basenames of individual sample directories just one level down of an input directory that can be specified using the `-i` argument (see below). Each of those directories should contain the NanoAOD-tier files for that sample.
-- Specify the input directory in the `-i` argument. This should be the directory just above the individual sample directories. Apparently it is required that the input directory has the data taking year somewhere in its path, otherwise an `AssertionError` is raised.
-- Still not able to run jobs without error. Currently struggling with `ImportError: libssl.so.10: cannot open shared object file: No such file or directory` which seems to come from an `import ROOT` statement and probably has to do with container issues.
