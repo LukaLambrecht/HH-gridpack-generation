@@ -257,6 +257,3 @@ Processing sequence:
 - `NanoHH4b/run/run_postproc_condor.sh`: sets up the environment and calls `./processor.py`.
 - `NanoHH4b/run/processor.py` runs on one or multiple input files (either local or remote), output dir is part of the metadata provided as input; sets up the file prefix, sets up and calls the postprocessor, hadds all output files. Ultimately calls `nano_postproc.py` which is part of NanoAOD-tools.
 - `NanoAODTools/scripts/nano_postproc.py`: creates and runs a PostProcessor.
-
-Other preliminary notes:
-- When running with condor submission, it seems to be necessary to have a valid proxy (in `/tmp/x509up_<your proxy number>`), even though no remote file reading or processing is needed. But even with a proxy, the job still is held, seemingly for this reason. Maybe the proxy needs to be copied to the worker node somehow? It seems to be fixed by copying the proxy to somewhere on `/afs` (not `/tmp` and not `/eos`), and then providing the argument `--extra-transfer <path to proxy on afs>`.
