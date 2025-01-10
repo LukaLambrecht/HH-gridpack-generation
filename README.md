@@ -223,6 +223,29 @@ And finally, since regular `cron` is not accessible on lxplus, use 'authenticate
 The syntax is exactly the same as regular cron, except for an extra field `lxplus.cern.ch` between the time specifiers and the command(s) to run.
 
 
+## Patch the gridpack
+In some cases, one may want to patch the gridpack after generation but before producing events.
+This is in general possible using the following steps:
+- Copy the gridpack to a newly created empty working directory.
+- Unpack the gridpack using `tar -xvzf <the gridpack>` (from inside the working directory). This will extract everything inside the gridpack and put it in the working directory.
+- Remove the original gridpack from the working directory, to avoid packing it inside the patched gridpack later on.
+- Patch the files that need patching.
+- Re-pack the gridpack using `tar -cvzf <new gridpack> *` (from inside the working directory).
+
+**For convenience**: a script `patch_gridpack.py` is provided (in the `tools` directory), that basically runs the steps above. In case your desired patch is not yet implemented, you'll need to run the steps manually.
+
+### Patch for pdf and scale reweighting
+The scale and pdf variations are defined in the file `pwg-rwl.dat` (inside a Powheg working directory after compilation), produced by the [make_rwl.py](https://github.com/fabio-mon/genproductions/blob/master/bin/Powheg/make_rwl.py) script (called from within the [compilation script](https://github.com/fabio-mon/genproductions/blob/430fc71c645df6d2ee76a9e5e1c5ed013ea5733d/bin/Powheg/Templates/runGetSource_template.sh#L51)).
+The default contains a very large number of pdf weights (with a severe impact on the runtime of event production),
+which might not be needed in a particular use case.
+An example `pwg-rwl.py` file with a strongly reduced number of pdf weights is provided in the `templates` folder.
+You can use it as follows:
+
+```
+python3 patch_gridpack.py -g <your gridpack> -o <your new patched gridpack> --weightfile ../templates/pwg-rwl-lhapdf325300.dat
+```
+
+
 ## Check the gridpack
 See [Fabio's intructions](https://gitlab.cern.ch/hh/hhgridpacks) for the baseline commands to follow.
 
