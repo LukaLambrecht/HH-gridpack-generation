@@ -16,6 +16,8 @@ if __name__=='__main__':
       help='Path to the gridpack to check')
     parser.add_argument('-n', '--nevents', default=10, type=int,
       help='Path to the gridpack to check')
+    parser.add_argument('-r', '--runmode', default='local', choices=['local', 'condor'],
+      help='Run interactively or in condor job')
     parser.add_argument('--el7', default=False, action='store_true',
       help='Run in el7 container')
     args = parser.parse_args()
@@ -53,5 +55,8 @@ if __name__=='__main__':
         run_in_container_script = os.path.join(toolsdir, 'run_in_el7_container.sh')
         cmd = 'bash {} {}'.format(run_in_container_script, exe)
 
-    # run the script in a job
-    ct.submitCommandAsCondorJob('cjob_check_gridpack', cmd, jobflavour='workday')
+    # run the command or submit as job
+    if args.runmode=='local':
+        os.system(cmd)
+    elif args.runmode=='condor':
+        ct.submitCommandAsCondorJob('cjob_check_gridpack', cmd, jobflavour='workday')
