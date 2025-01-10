@@ -245,6 +245,11 @@ You can use it as follows:
 python3 patch_gridpack.py -g <your gridpack> -o <your new patched gridpack> --weightfile ../templates/pwg-rwl-lhapdf325300.dat
 ```
 
+### Patch the entire powheg input file
+The entire powheg input file can be replaced after gridpack generation.
+Note: it is not yet clear which (if any) parameters are propagated correctly to the event production if they are changed in the powheg input file after gridpack generation, though it seems to work at first sight for the `hmass` parameter. To be confirmed.
+Use the `--inputfile <path to new powheg input file>` argument for `patch_gridpack.py`.
+
 
 ## Check the gridpack
 See [Fabio's intructions](https://gitlab.cern.ch/hh/hhgridpacks) for the baseline commands to follow.
