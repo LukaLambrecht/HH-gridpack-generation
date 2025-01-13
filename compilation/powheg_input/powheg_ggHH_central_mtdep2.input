@@ -1,7 +1,8 @@
-! Custom input file for attempts of finding out what is going wrong in v1 of samples
+! Powheg input card copied from central sample production,
+! but with mtdep set to 2 instead of 3.
 
 ! ggHH production parameters:
-mtdep 3
+mtdep 2
 !                      1: Born improved HEFT
 !                      2: approximated full theory (FTapprox)
 !                      3: full theory
@@ -20,8 +21,16 @@ hdecaymode -1        ! PDG code for Higgs boson decay products (it affects only 
 !                      12  gamma gamma
 !                      -1  all decay channels closed
 
+! Values of the Higgs couplings w.r.t SM
+chhh      1.0       ! Trilinear Higgs self-coupling
+ct        1.0       ! Top-Higgs Yukawa coupling
+ctt       0.0       ! Two-top-two-Higgs (tthh) coupling
+cggh      0.0       ! Effective gluon-gluon-Higgs coupling
+cgghh     0.0       ! Effective two-gluon-two-Higgses coupling
+
+
 ! general parameters:
-numevts NEVENTS        ! number of events to be generated
+numevts NEVENTS
 ih1         1        ! hadron 1 (1 for protons, -1 for antiprotons)
 ih2         1        ! hadron 2 (1 for protons, -1 for antiprotons)
 ebeam1 6800     ! energy of beam 1
@@ -67,7 +76,7 @@ LOevents          0  !
 fastbtlbound      1  ! fast evaluation of Btilde upper bounds
 storemintupb      1  ! store function calls in binary file for more precise generation
 ubexcess_correct  1  ! corrects for error in upper bound estimate
-storeinfo_rwgt    1  ! store info to allow for reweighting
+#storeinfo_rwgt 0
 compute_rwgt      0  ! store info to allow for reweighting
 softtest          0  ! no check of the soft limit in the real
 colltest          0  ! no check of the collinear limit in the real
@@ -77,20 +86,20 @@ hdamp           250
 
 ! PARAMETERS for parallel runnning
 ! - non parallel (for testing purposes only)
-iseed SEED           !  Start the random number generator with seed iseed
+iseed SEED
 #rand1     0         !  skipping  rand2*100000000+rand1 numbers.
 #rand2     0         !  (see RM48 short writeup in CERNLIB)
 
 ! - parallel
-manyseeds 1          ! Used to perform multiple runs with different random
+#manyseeds 1
                      ! seeds in the same directory.
                      ! If set to 1, the program asks for an integer j;
                      ! The file pwgseeds.dat at line j is read, and the
                      ! integer at line j is used to initialize the random
                      ! sequence for the generation of the event.
                      ! The event file is called pwgevents-'j'.lhe
-parallelstage 4
-xgriditeration 0
+#parallelstage 4
+#xgriditeration 1 1
 maxseeds    9999
 
 ! PARAMETERS for reweighting
@@ -110,3 +119,13 @@ maxseeds    9999
 
 check_bad_st1 1
 check_bad_st2 1
+
+withnegweights 1
+
+pdfreweight 0
+storeinfo_rwgt 0
+
+rwl_group_events 2000
+lhapdf6maxsets 50
+rwl_file 'pwg-rwl.dat'
+rwl_format_rwgt 1
